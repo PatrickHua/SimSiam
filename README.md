@@ -60,7 +60,7 @@ python main.py \
     --num_epochs 100 \ 
 ```
 
-
+If you find this repo helpful, please consider star or fork so that I have the motivation to improve it and add distributed data parallel to the code.
 
 
 
