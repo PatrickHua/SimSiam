@@ -8,9 +8,14 @@ A PyTorch implementation for the paper **Exploring Simple Siamese Representation
 
 
 ### Dependencies
+
+If you don't have python 3.8 environment:
 ```
-conda create -n py38 python=3.8
-conda activate py38
+conda create -n simsiam python=3.8
+conda activate simsiam
+```
+Then install the required modules:
+```
 pip install requirement.txt
 ```
 
