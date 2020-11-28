@@ -1,5 +1,5 @@
 # SimSiam
-A PyTorch implementation for the paper 'Exploring Simple Siamese Representation Learning' 
+A PyTorch implementation for the paper **Exploring Simple Siamese Representation Learning**
 
 [paper](https://arxiv.org/abs/2011.10566) 
 
@@ -60,7 +60,7 @@ python main.py \
     --num_epochs 100 \ 
 ```
 
-If you find this repo helpful, please consider star or fork so that I have the motivation to improve it and add distributed data parallel to the code.
+If you find this repo helpful, please consider star or fork so that I have the motivation to improve it and convert it for distributed large scale training.
 
 
 
