@@ -73,10 +73,10 @@ python main.py \
 - complete code for byol, simclr and swav
 - add code for linear evaluation
 - convert from dataparallel to distributed data parallel (DDP)
+- create PyPI package `pip install simsiam-pytorch`
 
 
-
-If you find this repo helpful, please consider star or fork so that I have the motivation to improve it and convert it for distributed large scale training.
+If you find this repo helpful, please consider star or fork so that I have the motivation to improve it.
 
 
 
