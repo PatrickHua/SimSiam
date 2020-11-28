@@ -9,7 +9,7 @@ A PyTorch implementation for the paper **Exploring Simple Siamese Representation
 
 ### Dependencies
 ```
-conda create -n py38 python==3.8
+conda create -n py38 python=3.8
 conda activate py38
 pip install requirement.txt
 ```
