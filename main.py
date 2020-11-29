@@ -28,6 +28,7 @@ def main(args):
         args.batch_size = 2
         args.num_epochs = 1
         args.num_workers = 0
+        args.dataset = 'debug'
         train_set = torch.utils.data.Subset(train_set, range(0, args.batch_size)) # take only one batch
 
     train_loader = torch.utils.data.DataLoader(
@@ -45,7 +46,7 @@ def main(args):
     if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     
     # define optimizer
-    optimizer = get_optimizer(args.optimizer, model.parameters(), args.base_lr*args.batch_size/256, momentum=0.9, weight_decay=0.0001)
+    optimizer = get_optimizer(args.optimizer, model, args.base_lr*args.batch_size/256, momentum=0.9, weight_decay=0.0001)
 
     # define lr scheduler
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -69,6 +70,9 @@ def main(args):
 
         lr_scheduler.step()
 
+
+        # Save checkpoint
+        os.makedirs(args.output_dir, exist_ok=True)
         torch.save({
             'epoch': epoch+1,
             'state_dict':model.module.state_dict(),

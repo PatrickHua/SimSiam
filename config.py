@@ -14,7 +14,7 @@ def get_args():
     parser.add_argument('--data_dir', type=str, default=os.getenv('DATA'))
     parser.add_argument('--output_dir', type=str, default=os.getenv('OUTPUT'))
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
-    parser.add_argument('--optimizer', type=str, default='sgd')
+    parser.add_argument('--optimizer', type=str, default='sgd', help='sgd, lars(from lars paper), lars_simclr(used in simclr and byol), larc(used in swav)')
     parser.add_argument('--model', type=str, default='simsiam')
     parser.add_argument('--backbone', type=str, default='resnet50')
     parser.add_argument('--download', action='store_true', help="if can't find dataset, download from web")
