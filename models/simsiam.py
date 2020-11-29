@@ -10,6 +10,13 @@ def D(p, z): # negative cosine similarity
     z = F.normalize(z, dim=1) # l2-normalize 
     return -(p*z).sum(dim=1).mean()
 
+# same thing, much faster. Scroll down, speed test in __main__
+def neg_cos_D(p, z):
+    return - torch.nn.functional.cosine_similarity(p, z.detach(), dim=-1).mean()
+
+D = neg_cos_D # comment out this line of code to use the original distance function
+
+
 class projection_MLP(nn.Module):
     def __init__(self, in_dim, hidden_dim=2048, out_dim=2048):
         super().__init__()
@@ -93,11 +100,25 @@ if __name__ == "__main__":
     x2 = torch.randn_like(x1)
 
     model.forward(x1, x2).backward()
+    print("forward backwork check")
 
+    z1 = torch.randn((200, 2560))
+    z2 = torch.randn_like(z1)
+    import time
+    tic = time.time()
+    print(D(z1, z2))
+    toc = time.time()
+    print(toc - tic)
+    tic = time.time()
+    print(neg_cos_D(z1, z2))
+    toc = time.time()
+    print(toc - tic)
 
-
-
-
+# Output:
+# tensor(-0.0010)
+# 0.005159854888916016
+# tensor(-0.0010)
+# 0.0014872550964355469
 
 
 

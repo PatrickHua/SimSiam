@@ -1,10 +1,7 @@
 # SimSiam
-A PyTorch implementation for the paper **Exploring Simple Siamese Representation Learning**
+A PyTorch implementation for the paper [**Exploring Simple Siamese Representation Learning**](https://arxiv.org/abs/2011.10566) by Xinlei Chen & Kaiming He
 
-[paper](https://arxiv.org/abs/2011.10566) 
-
-[code](https://github.com/PatrickHua/SimSiam) 
-
+This repo also provides pytorch implementations for simclr, byol and swav. I wrote the models using the exact set of configurations in their papers. You can open a pull request if mistakes are found.
 
 
 ### Dependencies
@@ -22,6 +19,11 @@ pip install requirement.txt
 ### Run this command to test the environment
 ```
 python main.py --debug
+
+➜  SimSiam git:(main) python main.py --debug
+Epoch 0/1: 100%|█████████████████████████| 1/1 [00:02<00:00,  2.83s/it, loss=0.0273, loss_avg=0.0273]
+Training: 100%|████████████████████████████████████████████████████████| 1/1 [00:02<00:00,  3.00s/it]
+Model saved to ./outputs/simsiam-debug-epoch1.pth
 ```
 
 ### Run SimSiam
@@ -54,7 +56,10 @@ python main.py \
     --dataset imagenet \ 
     --batch_size 4096 \ 
     --num_epochs 800 \
-    --optimizer lars_simclr
+    --optimizer lars_simclr \
+    --weight_decay 1e-6 \
+    --base_lr 0.3 \
+    --warm_up_epochs 10
 ```
 
 ### Run BYOL
@@ -69,8 +74,10 @@ python main.py \
     --batch_size 256 \ 
     --num_epochs 100 \ 
     --optimizer lars_simclr \ They use simclr version of lars
+    --weight_decay 1.5e-6 \
+    --base_lr 0.3 \
+    --warm_up_epochs 10
 ```
-
 
 ### TODO
 - complete code for byol, simclr and swav

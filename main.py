@@ -15,7 +15,7 @@ from optimizers import get_optimizer
 
 
 def main(args):
-    
+
     train_set = get_dataset(
         args.dataset, 
         args.data_dir, 
@@ -29,6 +29,7 @@ def main(args):
         args.num_epochs = 1
         args.num_workers = 0
         args.dataset = 'debug'
+        args.output_dir = './outputs/'
         train_set = torch.utils.data.Subset(train_set, range(0, args.batch_size)) # take only one batch
 
     train_loader = torch.utils.data.DataLoader(
@@ -46,12 +47,18 @@ def main(args):
     if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     
     # define optimizer
-    optimizer = get_optimizer(args.optimizer, model, args.base_lr*args.batch_size/256, momentum=0.9, weight_decay=0.0001)
+    optimizer = get_optimizer(
+        args.optimizer, model, 
+        lr=args.base_lr*args.batch_size/256, 
+        momentum=args.momentum, 
+        weight_decay=args.weight_decay)
+
+    # TODO: linear lr warm up for byol simclr swav
+    # args.warm_up_epochs
 
     # define lr scheduler
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, args.num_epochs, eta_min=0
-    )
+        optimizer, args.num_epochs, eta_min=0)
 
     loss_meter = AverageMeter(name='Loss')
 
@@ -73,6 +80,7 @@ def main(args):
 
         # Save checkpoint
         os.makedirs(args.output_dir, exist_ok=True)
+        model_path = os.path.join(args.output_dir, f'{args.model}-{args.dataset}-epoch{epoch+1}.pth')
         torch.save({
             'epoch': epoch+1,
             'state_dict':model.module.state_dict(),
@@ -80,8 +88,8 @@ def main(args):
             'lr_scheduler':lr_scheduler.state_dict(),
             'args':args,
             'loss_meter':loss_meter
-        }, os.path.join(args.output_dir, f'{args.model}-{args.dataset}-epoch{epoch+1}.pth'))
-
+        }, model_path)
+    print(f"Model saved to {model_path}")
 
 if __name__ == "__main__":
     main(args=get_args())

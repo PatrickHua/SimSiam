@@ -5,7 +5,8 @@ import torch
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='stl10', help='choose from stl10, mnist, cifar10, cifar100, imagenet')
-    parser.add_argument('--image_size', type=int, default=None)
+    parser.add_argument('--download', action='store_true', help="if can't find dataset, download from web")
+    parser.add_argument('--image_size', type=int, default=224)
     parser.add_argument('--batch_size', type=int, default=512)
     parser.add_argument('--base_lr', type=float, default=0.05)
     parser.add_argument('--debug', action='store_true')
@@ -17,7 +18,11 @@ def get_args():
     parser.add_argument('--optimizer', type=str, default='sgd', help='sgd, lars(from lars paper), lars_simclr(used in simclr and byol), larc(used in swav)')
     parser.add_argument('--model', type=str, default='simsiam')
     parser.add_argument('--backbone', type=str, default='resnet50')
-    parser.add_argument('--download', action='store_true', help="if can't find dataset, download from web")
+    parser.add_argument('--momentum', type=float, default=0.9)
+    parser.add_argument('--weight_decay', type=float, default=0.0001)
+    parser.add_argument('--warm_up_epochs', type=int, default=0, help='learning rate will be linearly scaled during warm up period')
+    parser.add_argument('--resume', type=str, default=None)
+
     return parser.parse_args()
 
 
