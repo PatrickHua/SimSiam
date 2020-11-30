@@ -36,7 +36,7 @@ def get_args():
     if args.use_default_hyperparameters:
         if args.model == 'byol':
             args.__dict__.update(byol_args)
-        elif args.model == ''
+        # elif args.model == ''
         else:
             raise NotImplementedError
     

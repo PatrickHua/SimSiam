@@ -5,6 +5,8 @@ imagenet_mean_std = [[0.485, 0.456, 0.406],[0.229, 0.224, 0.225]]
 class SimSiamTransform():
     def __init__(self, image_size, mean_std=imagenet_mean_std):
         image_size = 224 if image_size is None else image_size # by default simsiam use image size 224
+        # blur = T.GaussianBlur(kernel_size=image_size//20*2+1, sigma=(0.1, 2.0)), # simclr paper gives the kernel size. Kernel size has to be odd positive number with torchvision
+        # T.
         self.transform = T.Compose([
             T.RandomResizedCrop(image_size, scale=(0.2, 1.0)),
             T.RandomHorizontalFlip(),

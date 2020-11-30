@@ -7,6 +7,7 @@ def get_aug(name, image_size, train):
             augmentation = SimSiamTransform(image_size)
         else:
             raise NotImplementedError
+    
     elif name == 'byol':
         if train:
             augmentation = BYOL_transform(image_size)
