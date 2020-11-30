@@ -8,7 +8,7 @@ class RandomDataset(torch.utils.data.Dataset):
         self.size = 1000
     def __getitem__(self, idx):
         if idx < self.size:
-            return torch.randn((3, 224, 224))
+            return [torch.randn((3, 224, 224)), torch.randn((3, 224, 224))], [0,0,0]
         else:
             raise Exception
 

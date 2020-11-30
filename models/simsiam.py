@@ -81,10 +81,12 @@ class prediction_MLP(nn.Module):
 class SimSiam(nn.Module):
     def __init__(self, backbone=resnet50()):
         super().__init__()
-
+        self.projector = projection_MLP(backbone.fc.in_features)
+        backbone.fc = nn.Identity()
+        self.backbone = backbone
         self.encoder = nn.Sequential( # f encoder
-            *list(backbone.children())[:-1],
-            projection_MLP(list(backbone.children())[-1].in_features)
+            self.backbone,
+            self.projector
         )
         self.predictor = prediction_MLP()
     

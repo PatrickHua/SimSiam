@@ -16,6 +16,7 @@ def get_args():
     parser.add_argument('--output_dir', type=str, default=os.getenv('OUTPUT'))
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--resume', type=str, default=None)
+    parser.add_argument('--eval_from', type=str, default=None)
 
     parser.add_argument('--use_default_hyperparameters', action='store_true')
     # model related params

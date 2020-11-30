@@ -6,7 +6,7 @@ import torchvision
 from tqdm import tqdm
 from configs import get_args
 from augmentations import get_aug
-from models import get_model
+from models import get_model, get_backbone
 from tools import AverageMeter
 from datasets import get_dataset
 from optimizers import get_optimizer
@@ -19,16 +19,10 @@ def main(args):
     train_set = get_dataset(
         args.dataset, 
         args.data_dir, 
-        transform=get_aug(args.model, args.image_size, True), 
+        transform=get_aug(args.model, args.image_size, train=False, train_classifier=True), 
         train=True, 
         download=args.download # default is False
     )
-    
-    if args.debug:
-        args.batch_size = 2 
-        args.num_epochs = 1 # train only one epoch
-        args.num_workers = 0
-        train_set = torch.utils.data.Subset(train_set, range(0, args.batch_size)) # take only one batch
 
     train_loader = torch.utils.data.DataLoader(
         dataset=train_set,
@@ -38,12 +32,40 @@ def main(args):
         pin_memory=True,
         drop_last=True
     )
+    test_set = get_dataset(
+        args.dataset, 
+        args.data_dir, 
+        transform=get_aug(args.model, args.image_size, train=False, train_classifier=False), 
+        train=False, 
+        download=args.download # default is False
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        dataset=train_set,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.num_workers,
+        pin_memory=True,
+        drop_last=True
+    )
+
+
 
     # define model
-    model = get_model(args.model, args.backbone).to(args.device)
+    # model = get_model(args.model, args.backbone)
+    backbone = get_backbone(args.backbone, castrate=True)
+    model = backbone
+    assert args.eval_from is not None
+    save_dict = torch.load(args.eval_from, map_location='cpu')
+    msg = model.load_state_dict({k[9:]:v for k, v in save_dict['state_dict'].items() if k.startswith('backbone.')}, strict=True)
+    print(msg)
+    model = model.to(args.device)
     model = torch.nn.DataParallel(model)
     if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     
+    breakpoint()
+
+
     # define optimizer
     optimizer = get_optimizer(
         args.optimizer, model, 
