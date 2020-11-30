@@ -1,5 +1,5 @@
 import torchvision
-from .custom import DebugDataset
+from .random_dataset import RandomDataset
 
 
 def get_dataset(dataset, data_dir, transform, train=True, download=False):
@@ -13,6 +13,6 @@ def get_dataset(dataset, data_dir, transform, train=True, download=False):
         dataset = torchvision.datasets.CIFAR100(data_dir, train=train, transform=transform, download=download)
     elif dataset == 'imagenet':
         dataset = torchvision.datasets.ImageNet(data_dir, split='train' if train == True else 'val', transform=transform, download=download)
-    elif dataset == 'debug':
-        dataset = DebugDataset()
+    elif dataset == 'random':
+        dataset = RandomDataset()
     return dataset

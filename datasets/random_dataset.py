@@ -1,6 +1,6 @@
 import torch
 
-class DebugDataset(torch.utils.data.Dataset):
+class RandomDataset(torch.utils.data.Dataset):
     def __init__(self, root=None, train=True, transform=None, target_transform=None):
         self.transform = transform
         self.target_transform = target_transform

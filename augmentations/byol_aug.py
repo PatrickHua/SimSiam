@@ -32,3 +32,25 @@ class BYOL_transform: # Table 6
         x1 = self.transform1(x) 
         x2 = self.transform2(x) 
         return x1, x2
+
+
+class Transform_single:
+    def __init__(self, image_size, train, normalize=imagenet_norm):
+        self.denormalize = Denormalize(*imagenet_norm)
+        if train == True:
+            self.transform = transforms.Compose([
+                transforms.RandomResizedCrop(image_size, scale=(0.08, 1.0), ratio=(3.0/4.0,4.0/3.0), interpolation=Image.BICUBIC),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(*normalize)
+            ])
+        else:
+            self.transform = transforms.Compose([
+                transforms.Resize(int(image_size*(8/7)), interpolation=Image.BICUBIC), # 224 -> 256 
+                transforms.CenterCrop(image_size),
+                transforms.ToTensor(),
+                transforms.Normalize(*normalize)
+            ])
+
+    def __call__(self, x):
+        return self.transform(x)

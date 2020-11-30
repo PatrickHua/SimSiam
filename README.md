@@ -18,7 +18,7 @@ pip install requirement.txt
 
 ### Run this command to test the environment
 ```
-python main.py --debug
+python main.py --debug --dataset random --output_dir ./outputs/
 
 ➜  SimSiam git:(main) python main.py --debug
 Epoch 0/1: 100%|█████████████████████████| 1/1 [00:02<00:00,  2.83s/it, loss=0.0273, loss_avg=0.0273]
@@ -26,9 +26,23 @@ Training: 100%|█████████████████████�
 Model saved to ./outputs/simsiam-debug-epoch1.pth
 ```
 
-### Run SimSiam
+### Choose a dataset
+```
+python main.py --debug --dataset cifar10 --data_dir "/Your/data/folder/" --output_dir "/Your/output/folder/"
+```
+The data folder should look like this:
+```
+➜  ~ tree /Your/data/folder/
+├── cifar-10-batches-py
+│   ├── batches.meta
+│   ├── data_batch_1
+│   ├── ...
+└── stl10_binary
+    ├── ...
+```
 
-All default configurations are the same as the paper (optimizers, models, datasets, image size ...),
+### Run SimSiam
+The default model is simsiam and all default configurations are set to be the same as the simsiam paper (optimizers, models, datasets, image size ...),
 simply run:
 
 ```
@@ -46,6 +60,8 @@ python main.py --dataset imagenet \
 
 
 ### Run SimCLR
+default hyperparameters are for simsiam, so you'll have to set them manually for simclr ...
+maybe I should write a list of configurations for different models ...
 ```
 python main.py \
     --model simclr \

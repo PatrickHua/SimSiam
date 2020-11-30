@@ -12,6 +12,10 @@ def get_aug(name, image_size, train):
             augmentation = BYOL_transform(image_size)
         else:
             raise NotImplementedError
+    elif name == 'simclr':
+        if train:
+            TODO    
+            
     else:
         raise NotImplementedError
 

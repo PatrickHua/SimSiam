@@ -42,7 +42,8 @@ class projection_MLP(nn.Module):
         )
 
     def forward(self, x):
-        x = self.layer1(x.squeeze())
+        # using x.squeeze() will break the program when batch size is 1
+        x = self.layer1(x.squeeze(dim=-1).squeeze(dim=-1)) # x.shape [4, 2048, 1, 1] -> [4, 2048]
         x = self.layer2(x)
         x = self.layer3(x)
         return x 
@@ -82,13 +83,12 @@ class SimSiam(nn.Module):
         self.predictor = prediction_MLP()
     
     def forward(self, x1, x2):
-        z1, z2 = (zz:=self.encoder(torch.cat([x1, x2]))).chunk(2)
-
-        p1, p2 = self.predictor(zz).chunk(2)
-
+        f, h = self.encoder, self.predictor
+        z1, z2 = f(x1), f(x2)
+        p1, p2 = h(z1), h(z2)
         L = D(p1, z2) / 2 + D(p2, z1) / 2
-
         return L
+
 
 
 
@@ -96,11 +96,12 @@ class SimSiam(nn.Module):
 
 if __name__ == "__main__":
     model = SimSiam()
-    x1 = torch.randn((20, 3, 224, 224))
+    x1 = torch.randn((2, 3, 224, 224))
     x2 = torch.randn_like(x1)
 
     model.forward(x1, x2).backward()
     print("forward backwork check")
+    # exit()
 
     z1 = torch.randn((200, 2560))
     z2 = torch.randn_like(z1)

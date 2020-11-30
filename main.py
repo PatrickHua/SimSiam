@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F 
 import torchvision
 from tqdm import tqdm
-from config import get_args 
+from configs import get_args
 from augmentations import get_aug
 from models import get_model
 from utils import AverageMeter
@@ -25,11 +25,9 @@ def main(args):
     )
     
     if args.debug:
-        args.batch_size = 2
-        args.num_epochs = 1
+        args.batch_size = 2 
+        args.num_epochs = 1 # train only one epoch
         args.num_workers = 0
-        args.dataset = 'debug'
-        args.output_dir = './outputs/'
         train_set = torch.utils.data.Subset(train_set, range(0, args.batch_size)) # take only one batch
 
     train_loader = torch.utils.data.DataLoader(
