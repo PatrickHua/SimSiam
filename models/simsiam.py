@@ -4,17 +4,18 @@ import torch.nn.functional as F
 from torchvision.models import resnet50
 
 
-def D(p, z): # negative cosine similarity
-    z = z.detach() # stop gradient
-    p = F.normalize(p, dim=1) # l2-normalize 
-    z = F.normalize(z, dim=1) # l2-normalize 
-    return -(p*z).sum(dim=1).mean()
+def D(p, z, version='simplified'): # negative cosine similarity
+    if version == 'original':
+        z = z.detach() # stop gradient
+        p = F.normalize(p, dim=1) # l2-normalize 
+        z = F.normalize(z, dim=1) # l2-normalize 
+        return -(p*z).sum(dim=1).mean()
+        
+    elif version == 'simplified':# same thing, much faster. Scroll down, speed test in __main__
+        return - torch.nn.functional.cosine_similarity(p, z.detach(), dim=-1).mean()
+    else:
+        raise Exception
 
-# same thing, much faster. Scroll down, speed test in __main__
-def neg_cos_D(p, z):
-    return - torch.nn.functional.cosine_similarity(p, z.detach(), dim=-1).mean()
-
-D = neg_cos_D # comment out this line of code to use the original distance function
 
 
 class projection_MLP(nn.Module):
@@ -107,11 +108,11 @@ if __name__ == "__main__":
     z2 = torch.randn_like(z1)
     import time
     tic = time.time()
-    print(D(z1, z2))
+    print(D(z1, z2, version='original'))
     toc = time.time()
     print(toc - tic)
     tic = time.time()
-    print(neg_cos_D(z1, z2))
+    print(D(z1, z2, version='simplified'))
     toc = time.time()
     print(toc - tic)
 
