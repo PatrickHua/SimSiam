@@ -7,7 +7,7 @@ from tqdm import tqdm
 from configs import get_args
 from augmentations import get_aug
 from models import get_model
-from utils import AverageMeter
+from tools import AverageMeter
 from datasets import get_dataset
 from optimizers import get_optimizer
 
@@ -64,7 +64,8 @@ def main(args):
     for epoch in tqdm(range(0, args.num_epochs), desc=f'Training'):
         loss_meter.reset()
         model.train()
-        for idx, ((images1, images2), labels) in enumerate(p_bar:=tqdm(train_loader, desc=f'Epoch {epoch}/{args.num_epochs}')):
+        p_bar=tqdm(train_loader, desc=f'Epoch {epoch}/{args.num_epochs}')
+        for idx, ((images1, images2), labels) in enumerate(p_bar):
             
             model.zero_grad()
             loss = model.forward(images1.to(args.device), images2.to(args.device))

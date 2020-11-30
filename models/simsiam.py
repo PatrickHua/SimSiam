@@ -10,7 +10,7 @@ def D(p, z, version='simplified'): # negative cosine similarity
         p = F.normalize(p, dim=1) # l2-normalize 
         z = F.normalize(z, dim=1) # l2-normalize 
         return -(p*z).sum(dim=1).mean()
-        
+
     elif version == 'simplified':# same thing, much faster. Scroll down, speed test in __main__
         return - torch.nn.functional.cosine_similarity(p, z.detach(), dim=-1).mean()
     else:
@@ -51,7 +51,7 @@ class projection_MLP(nn.Module):
 
 
 class prediction_MLP(nn.Module):
-    def __init__(self, in_dim=2048, hidden_dim=512, out_dim=2048):
+    def __init__(self, in_dim=2048, hidden_dim=512, out_dim=2048): # bottleneck structure
         super().__init__()
         ''' page 3 baseline setting
         Prediction MLP. The prediction MLP (h) has BN applied 
@@ -67,7 +67,12 @@ class prediction_MLP(nn.Module):
             nn.ReLU(inplace=True)
         )
         self.layer2 = nn.Linear(hidden_dim, out_dim)
-        
+        """
+        Adding BN to the output of the prediction MLP h does not work
+        well (Table 3d). We find that this is not about collapsing. 
+        The training is unstable and the loss oscillates.
+        """
+
     def forward(self, x):
         x = self.layer1(x)
         x = self.layer2(x)
@@ -102,7 +107,6 @@ if __name__ == "__main__":
 
     model.forward(x1, x2).backward()
     print("forward backwork check")
-    # exit()
 
     z1 = torch.randn((200, 2560))
     z2 = torch.randn_like(z1)
