@@ -72,7 +72,6 @@ def main(args):
     model = model.to(args.device)
     model = torch.nn.DataParallel(model)
     # if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    model.eval()
 
     classifier = nn.Linear(in_features=in_features, out_features=10, bias=True).to(args.device)
     classifier = torch.nn.DataParallel(classifier)
@@ -98,7 +97,8 @@ def main(args):
     # Start training
     for epoch in tqdm(range(0, args.num_epochs), desc=f'Evaluating'):
         loss_meter.reset()
-        model.train()
+        model.eval()
+        classifier.train()
         p_bar=tqdm(train_loader, desc=f'Epoch {epoch}/{args.num_epochs}')
         
         for idx, (images, labels) in enumerate(p_bar):
