@@ -13,7 +13,7 @@ conda activate simsiam
 ```
 Then install the required packages:
 ```
-pip install requirement.txt
+pip install -r requirements.txt
 ```
 
 ### Run this command to test the environment
