@@ -9,7 +9,7 @@ class SimSiamTransform():
             blur = lambda x:x
         else:
             blur = T.GaussianBlur(kernel_size=image_size//20*2+1, sigma=(0.1, 2.0)), # simclr paper gives the kernel size. Kernel size has to be odd positive number with torchvision
-        # T.
+
         self.transform = T.Compose([
             T.RandomResizedCrop(image_size, scale=(0.2, 1.0)),
             T.RandomHorizontalFlip(),

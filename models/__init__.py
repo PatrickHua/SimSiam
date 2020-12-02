@@ -1,4 +1,5 @@
 from .simsiam import SimSiam
+from .byol import BYOL
 from torchvision.models import resnet50, resnet18
 import torch
 
@@ -17,6 +18,10 @@ def get_backbone(backbone, castrate=False):
 def get_model(name, backbone):
     if name == 'simsiam':
         return SimSiam(get_backbone(backbone))
+    elif name == 'byol':
+        return BYOL(get_backbone(backbone))
+    elif name == 'simclr':
+        raise NotImplementedError
     else:
         raise NotImplementedError
 
