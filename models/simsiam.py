@@ -12,7 +12,7 @@ def D(p, z, version='simplified'): # negative cosine similarity
         return -(p*z).sum(dim=1).mean()
 
     elif version == 'simplified':# same thing, much faster. Scroll down, speed test in __main__
-        return - torch.nn.functional.cosine_similarity(p, z.detach(), dim=-1).mean()
+        return - F.cosine_similarity(p, z.detach(), dim=-1).mean()
     else:
         raise Exception
 
@@ -44,7 +44,7 @@ class projection_MLP(nn.Module):
 
     def forward(self, x):
         # using x.squeeze() will break the program when batch size is 1
-        x = self.layer1(x.squeeze(dim=-1).squeeze(dim=-1)) # x.shape [4, 2048, 1, 1] -> [4, 2048]
+        x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
         return x 
@@ -81,9 +81,10 @@ class prediction_MLP(nn.Module):
 class SimSiam(nn.Module):
     def __init__(self, backbone=resnet50()):
         super().__init__()
-        self.projector = projection_MLP(backbone.fc.in_features)
-        backbone.fc = nn.Identity()
+        
         self.backbone = backbone
+        self.projector = projection_MLP(backbone.output_dim)
+
         self.encoder = nn.Sequential( # f encoder
             self.backbone,
             self.projector
@@ -91,6 +92,7 @@ class SimSiam(nn.Module):
         self.predictor = prediction_MLP()
     
     def forward(self, x1, x2):
+
         f, h = self.encoder, self.predictor
         z1, z2 = f(x1), f(x2)
         p1, p2 = h(z1), h(z2)

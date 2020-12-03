@@ -12,8 +12,6 @@ def NT_XentLoss(z1, z2, temperature=0.5):
     similarity_matrix = F.cosine_similarity(representations.unsqueeze(1), representations.unsqueeze(0), dim=-1)
     l_pos = torch.diag(similarity_matrix, N)
     r_pos = torch.diag(similarity_matrix, -N)
-    # print(similarity_matrix)
-    # breakpoint()
     positives = torch.cat([l_pos, r_pos]).view(2 * N, 1)
     diag = torch.eye(2*N, dtype=torch.bool, device=device)
     diag[N:,:N] = diag[:N,N:] = diag[:N,:N]
@@ -39,7 +37,7 @@ class projection_MLP(nn.Module):
         )
         self.layer2 = nn.Linear(hidden_dim, out_dim)
     def forward(self, x):
-        x = self.layer1(x.squeeze(dim=-1).squeeze(dim=-1))
+        x = self.layer1(x)
         x = self.layer2(x)
         return x 
 
@@ -47,9 +45,9 @@ class SimCLR(nn.Module):
 
     def __init__(self, backbone=resnet50()):
         super().__init__()
-        self.projector = projection_MLP(backbone.fc.in_features)
-        backbone.fc = nn.Identity()
+        
         self.backbone = backbone
+        self.projector = projection_MLP(backbone.output_dim)
         self.encoder = nn.Sequential(
             self.backbone,
             self.projector

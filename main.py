@@ -38,6 +38,7 @@ def main(args):
 
     # define model
     model = get_model(args.model, args.backbone).to(args.device)
+    
     model = torch.nn.DataParallel(model)
     if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     

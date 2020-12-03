@@ -8,7 +8,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true')
     # training specific args
-    parser.add_argument('--dataset', type=str, required=True, help='choose from random, stl10, mnist, cifar10, cifar100, imagenet')
+    parser.add_argument('--dataset', type=str, default='cifar10', help='choose from random, stl10, mnist, cifar10, cifar100, imagenet')
     parser.add_argument('--download', action='store_true', help="if can't find dataset, download from web")
     parser.add_argument('--image_size', type=int, default=224)
     parser.add_argument('--num_workers', type=int, default=4)
@@ -33,12 +33,15 @@ def get_args():
 
 
     args = parser.parse_args()
-    assert not None in [args.output_dir, args.data_dir]
+    
 
     if args.debug:
         args.batch_size = 2 
         args.num_epochs = 1 # train only one epoch
         args.num_workers = 0
+
+    assert not None in [args.output_dir, args.data_dir]
+
 
     if args.use_default_hyperparameters:
         if args.model == 'byol':

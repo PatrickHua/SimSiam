@@ -28,16 +28,19 @@ HPS = dict(
     seed=1337,
 )
 
-def loss_fn(x, y, version='simplified'):
-    if version == 'original':
-        x = F.normalize(x, dim=-1, p=2)
-        y = F.normalize(y, dim=-1, p=2)
-        return 2 - 2 * (x * y).sum(dim=-1)
-    elif version == 'simplified':
-        return 2 - 2 * F.cosine_similarity(x,y, dim=-1)
-    else:
-        raise NotImplementedError
+# def loss_fn(x, y, version='simplified'):
+    
+#     if version == 'original':
+#         y = y.detach()
+#         x = F.normalize(x, dim=-1, p=2)
+#         y = F.normalize(y, dim=-1, p=2)
+#         return (2 - 2 * (x * y).sum(dim=-1)).mean()
+#     elif version == 'simplified':
+#         return (2 - 2 * F.cosine_similarity(x,y.detach(), dim=-1)).mean()
+#     else:
+#         raise NotImplementedError
 
+from .simsiam import D  # a bit different but it's essentially the same thing: neg cosine sim & stop gradient
 
 
 class MLP(nn.Module):
@@ -52,7 +55,7 @@ class MLP(nn.Module):
         self.layer2 = nn.Linear(HPS['mlp_hidden_size'], HPS['projection_size'])
 
     def forward(self, x):
-        x = self.layer1(x.squeeze(dim=-1).squeeze(dim=-1))
+        x = self.layer1(x)
         x = self.layer2(x)
         return x
 
@@ -60,9 +63,8 @@ class BYOL(nn.Module):
     def __init__(self, backbone):
         super().__init__()
 
-        self.projector = MLP(backbone.fc.in_features)
-        backbone.fc = nn.Identity()
         self.backbone = backbone
+        self.projector = MLP(backbone.output_dim)
         self.online_encoder = nn.Sequential(
             self.backbone,
             self.projector
@@ -84,25 +86,22 @@ class BYOL(nn.Module):
         for online, target in zip(self.online_encoder.parameters(), self.target_encoder.parameters()):
             target.data = tau * target.data + (1 - tau) * online.data
             
-    def forward(self, image_one, image_two):
+    def forward(self, x1, x2):
+        f_o, h_o = self.online_encoder, self.online_predictor
+        f_t      = self.target_encoder
 
-        online_proj_one = self.online_encoder(image_one)
-        online_proj_two = self.online_encoder(image_two)
+        z1_o = f_o(x1)
+        z2_o = f_o(x2)
 
-        online_pred_one = self.online_predictor(online_proj_one)
-        online_pred_two = self.online_predictor(online_proj_two)
+        p1_o = h_o(z1_o)
+        p2_o = h_o(z2_o)
 
         with torch.no_grad():
-            target_proj_one, _ = self.target_encoder(image_one)
-            target_proj_two, _ = self.target_encoder(image_two)
+            z1_t = f_t(x1)
+            z2_t = f_t(x2)
         
-        loss_one = loss_fn(online_pred_one, target_proj_two.detach())
-        loss_two = loss_fn(online_pred_two, target_proj_one.detach())
-
-        loss = (loss_one + loss_two).mean() # batch-wise mean
-
-        return loss
-        #, representation # representation sample for train time cluster evaluation
+        L = D(p1_o, z2_t) / 2 + D(p2_o, z1_t) / 2 
+        return L
 
     
 

@@ -1,5 +1,5 @@
 from torchvision import transforms
-from PIL import Image
+from PIL import Image, ImageOps
 
 
 imagenet_norm = [[0.485, 0.456, 0.406],[0.229, 0.224, 0.225]]
