@@ -21,14 +21,11 @@ def main(args):
         args.data_dir, 
         transform=get_aug(args.model, args.image_size, True), 
         train=True, 
-        download=args.download # default is False
+        download=args.download, # default is False
+        debug_subset_size=args.batch_size if args.debug else None # run one batch if debug
     )
     
-    if args.debug:
-        args.batch_size = 2 
-        args.num_epochs = 1 # train only one epoch
-        args.num_workers = 0
-        train_set = torch.utils.data.Subset(train_set, range(0, args.batch_size)) # take only one batch
+
 
     train_loader = torch.utils.data.DataLoader(
         dataset=train_set,

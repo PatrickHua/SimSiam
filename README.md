@@ -17,16 +17,7 @@ pip install -r requirements.txt
 ```
 
 ### Run this command to test the environment
-```
-python main.py --debug --dataset random --output_dir ./outputs/
 
-➜  SimSiam git:(main) python main.py --debug
-Epoch 0/1: 100%|█████████████████████████| 1/1 [00:02<00:00,  2.83s/it, loss=0.0273, loss_avg=0.0273]
-Training: 100%|████████████████████████████████████████████████████████| 1/1 [00:02<00:00,  3.00s/it]
-Model saved to ./outputs/simsiam-debug-epoch1.pth
-```
-
-### Choose a dataset
 ```
 python main.py --debug --dataset cifar10 --data_dir "/Your/data/folder/" --output_dir "/Your/output/folder/"
 ```
@@ -40,6 +31,13 @@ The data folder should look like this:
 └── stl10_binary
     ├── ...
 ```
+```
+python main.py --debug --dataset cifar10 --data_dir ~/Data --output_dir ./outputs/
+Epoch 0/1: 100%|████████████████████████████████████| 1/1 [00:03<00:00,  3.60s/it, loss=-.0196, loss_avg=-.0196]
+Training: 100%|███████████████████████████████████████████████████████████████████| 1/1 [00:03<00:00,  3.83s/it]
+Model saved to ./outputs/simsiam-cifar10-epoch1.pth
+```
+
 
 ### Run SimSiam
 The default model is simsiam and all default configurations are set to be the same as the simsiam paper (optimizers, models, datasets, image size ...),
