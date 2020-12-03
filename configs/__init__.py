@@ -53,6 +53,7 @@ def get_args():
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--weight_decay', type=float, default=0.0001)
 
+    parser.add_argument('--eval_after_train', action='store_true')
     args = parser.parse_args()
     
 
@@ -62,13 +63,13 @@ def get_args():
         args.num_workers = 0
 
     assert not None in [args.output_dir, args.data_dir]
-    assert args.stop_at_epoch <= args.num_epochs
+    # assert args.stop_at_epoch <= args.num_epochs
     if args.stop_at_epoch is not None:
         if args.stop_at_epoch > args.num_epochs:
             raise Exception
     else:
         args.stop_at_epoch = args.num_epochs
-        
+
     if args.use_default_hyperparameters:
         if args.model == 'byol':
             args.__dict__.update(byol_args)

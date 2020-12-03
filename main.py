@@ -11,7 +11,7 @@ from models import get_model
 from tools import AverageMeter
 from datasets import get_dataset
 from optimizers import get_optimizer, LR_Scheduler
-
+from linear_eval import main as linear_eval
 
 
 
@@ -26,8 +26,6 @@ def main(args):
         debug_subset_size=args.batch_size if args.debug else None # run one batch if debug
     )
     
-
-
     train_loader = torch.utils.data.DataLoader(
         dataset=train_set,
         batch_size=args.batch_size,
@@ -50,20 +48,12 @@ def main(args):
         momentum=args.momentum, 
         weight_decay=args.weight_decay)
 
-    # TODO: linear lr warm up for byol simclr swav
-    # args.warm_up_epochs
-
-    # define lr scheduler
-    # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-    #     optimizer, args.num_epochs, eta_min=0)
     lr_scheduler = LR_Scheduler(
         optimizer,
         args.warmup_epochs, args.warmup_lr, 
         args.num_epochs, args.base_lr, args.final_lr, 
         len(train_loader)
     )
-
-    # args.warmup_epochs
 
     loss_meter = AverageMeter(name='Loss')
 
@@ -94,11 +84,15 @@ def main(args):
             'epoch': epoch+1,
             'state_dict':model.module.state_dict(),
             # 'optimizer':optimizer.state_dict(), # will double the checkpoint file size
-            'lr_scheduler':lr_scheduler.state_dict(),
+            'lr_scheduler':lr_scheduler,
             'args':args,
             'loss_meter':loss_meter
         }, model_path)
     print(f"Model saved to {model_path}")
+
+    if args.eval_after_train:
+        args.eval_from = model_path
+        linear_eval(args)
 
 if __name__ == "__main__":
     main(args=get_args())

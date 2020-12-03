@@ -51,24 +51,19 @@ def main(args):
         pin_memory=True,
         drop_last=True
     )
-
-
     model = get_backbone(args.backbone)
+    classifier = nn.Linear(in_features=model.output_dim, out_features=10, bias=True).to(args.device)
 
     assert args.eval_from is not None
     save_dict = torch.load(args.eval_from, map_location='cpu')
     msg = model.load_state_dict({k[9:]:v for k, v in save_dict['state_dict'].items() if k.startswith('backbone.')}, strict=True)
-    print(msg)
+    
+    # print(msg)
     model = model.to(args.device)
     model = torch.nn.DataParallel(model)
-    # if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
-    classifier = nn.Linear(in_features=model.output_dim, out_features=10, bias=True).to(args.device)
     # if torch.cuda.device_count() > 1: classifier = torch.nn.SyncBatchNorm.convert_sync_batchnorm(classifier)
     classifier = torch.nn.DataParallel(classifier)
-
-
-
     # define optimizer
     optimizer = get_optimizer(
         args.optimizer, classifier, 
@@ -86,13 +81,14 @@ def main(args):
     loss_meter = AverageMeter(name='Loss')
     acc_meter = AverageMeter(name='Accuracy')
     # Start training
-    for epoch in tqdm(range(0, args.num_epochs), desc=f'Evaluating'):
+    global_progress = tqdm(range(0, args.num_epochs), desc=f'Evaluating')
+    for epoch in global_progress:
         loss_meter.reset()
         model.eval()
         classifier.train()
-        p_bar=tqdm(train_loader, desc=f'Epoch {epoch}/{args.num_epochs}')
+        local_progress = tqdm(train_loader, desc=f'Epoch {epoch}/{args.num_epochs}', disable=args.hide_progress)
         
-        for idx, (images, labels) in enumerate(p_bar):
+        for idx, (images, labels) in enumerate(local_progress):
 
             classifier.zero_grad()
             with torch.no_grad():
@@ -105,24 +101,25 @@ def main(args):
             loss.backward()
             optimizer.step()
             loss_meter.update(loss.item())
-            p_bar.set_postfix({"loss":loss_meter.val, 'loss_avg':loss_meter.avg})
+            lr = lr_scheduler.step()
+            local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
+        # global_progress.
+        
 
-        lr_scheduler.step()
 
-
-        p_bar=tqdm(test_loader, desc=f'Test {epoch}/{args.num_epochs}')
+        local_progress=tqdm(test_loader, desc=f'Test {epoch}/{args.num_epochs}', disable=args.hide_progress)
         classifier.eval()
         correct, total = 0, 0
         acc_meter.reset()
-        for idx, (images, labels) in enumerate(p_bar):
+        for idx, (images, labels) in enumerate(local_progress):
             with torch.no_grad():
                 feature = model(images.to(args.device))
                 preds = classifier(feature).argmax(dim=1)
                 correct = (preds == labels.to(args.device)).sum().item()
                 acc_meter.update(correct/preds.shape[0])
-                p_bar.set_postfix({'accuracy': acc_meter.avg})
+                local_progress.set_postfix({'accuracy': acc_meter.avg})
         
-
+        global_progress.set_postfix({"epoch":epoch, 'accuracy':acc_meter.avg*100})
 
 
 
