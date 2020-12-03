@@ -65,6 +65,7 @@ def main(args):
         loss_meter.reset()
         model.train()
         p_bar=tqdm(train_loader, desc=f'Epoch {epoch}/{args.num_epochs}')
+        # breakpoint()
         for idx, ((images1, images2), labels) in enumerate(p_bar):
             # breakpoint()
             model.zero_grad()

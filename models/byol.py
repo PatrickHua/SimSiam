@@ -43,36 +43,31 @@ def loss_fn(x, y, version='simplified'):
 class MLP(nn.Module):
     def __init__(self, in_dim):
         super().__init__()
-        self.linear1 = nn.Linear(in_dim, HPS['mlp_hidden_size'])
-        self.bn = nn.BatchNorm1d(HPS['mlp_hidden_size'], eps=HPS['batchnorm_kwargs']['eps'], momentum=1-HPS['batchnorm_kwargs']['decay_rate'])
-        self.relu = nn.ReLU(inplace=True)
-        self.linear2 = nn.Linear(HPS['mlp_hidden_size'], HPS['projection_size'])
+
+        self.layer1 = nn.Sequential(
+            nn.Linear(in_dim, HPS['mlp_hidden_size']),
+            nn.BatchNorm1d(HPS['mlp_hidden_size'], eps=HPS['batchnorm_kwargs']['eps'], momentum=1-HPS['batchnorm_kwargs']['decay_rate']),
+            nn.ReLU(inplace=True)
+        )
+        self.layer2 = nn.Linear(HPS['mlp_hidden_size'], HPS['projection_size'])
 
     def forward(self, x):
-        x = self.linear1(x)
-        x = self.bn(x)
-        x = self.relu(x)
-        x = self.linear2(x)
+        x = self.layer1(x.squeeze(dim=-1).squeeze(dim=-1))
+        x = self.layer2(x)
         return x
 
-class Encoder(nn.Module):
-    def __init__(self, backbone):
-        super().__init__() 
-        self.backbone = backbone
-        self.z_dim = self.backbone.fc.in_features
-        self.projector = MLP(in_dim=self.z_dim)
-        self.backbone.fc = nn.Identity() 
-
-    def forward(self, x):
-        representation = self.backbone(x) 
-        projection = self.projector(representation) 
-        return projection, representation 
-
-        
 class BYOL(nn.Module):
     def __init__(self, backbone):
         super().__init__()
-        self.online_encoder = Encoder(backbone)
+
+        self.projector = MLP(backbone.fc.in_features)
+        backbone.fc = nn.Identity()
+        self.backbone = backbone
+        self.online_encoder = nn.Sequential(
+            self.backbone,
+            self.projector
+        )
+
         self.target_encoder = copy.deepcopy(self.online_encoder)
         self.online_predictor = MLP(HPS['projection_size'])
 
@@ -91,8 +86,8 @@ class BYOL(nn.Module):
             
     def forward(self, image_one, image_two):
 
-        online_proj_one, representation = self.online_encoder(image_one)
-        online_proj_two, _ = self.online_encoder(image_two)
+        online_proj_one = self.online_encoder(image_one)
+        online_proj_two = self.online_encoder(image_two)
 
         online_pred_one = self.online_predictor(online_proj_one)
         online_pred_two = self.online_predictor(online_proj_two)

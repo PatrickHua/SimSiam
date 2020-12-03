@@ -1,4 +1,11 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torchvision.models import resnet50
+
 def NT_XentLoss(z1, z2, temperature=0.5):
+    z1 = F.normalize(z1, dim=1)
+    z2 = F.normalize(z2, dim=1)
     N, Z = z1.shape 
     device = z1.device 
     representations = torch.cat([z1, z2], dim=0)
@@ -20,3 +27,59 @@ def NT_XentLoss(z1, z2, temperature=0.5):
 
     loss = F.cross_entropy(logits, labels, reduction='sum')
     return loss / (2 * N)
+
+
+class projection_MLP(nn.Module):
+    def __init__(self, in_dim, out_dim=256):
+        super().__init__()
+        hidden_dim = in_dim
+        self.layer1 = nn.Sequential(
+            nn.Linear(in_dim, hidden_dim),
+            nn.ReLU(inplace=True)
+        )
+        self.layer2 = nn.Linear(hidden_dim, out_dim)
+    def forward(self, x):
+        x = self.layer1(x.squeeze(dim=-1).squeeze(dim=-1))
+        x = self.layer2(x)
+        return x 
+
+class SimCLR(nn.Module):
+
+    def __init__(self, backbone=resnet50()):
+        super().__init__()
+        self.projector = projection_MLP(backbone.fc.in_features)
+        backbone.fc = nn.Identity()
+        self.backbone = backbone
+        self.encoder = nn.Sequential(
+            self.backbone,
+            self.projector
+        )
+
+
+
+    def forward(self, x1, x2):
+        z1 = self.encoder(x1)
+        z2 = self.encoder(x2)
+
+        loss = NT_XentLoss(z1, z2)
+        return loss
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
