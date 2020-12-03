@@ -11,9 +11,6 @@ from tools import AverageMeter
 from datasets import get_dataset
 from optimizers import get_optimizer
 
-
-
-
 def main(args):
 
     train_set = get_dataset(
@@ -30,8 +27,6 @@ def main(args):
         train=False, 
         download=args.download # default is False
     )
-
-
 
     if args.debug:
         args.batch_size = 20
@@ -58,13 +53,8 @@ def main(args):
     )
 
 
+    model = get_backbone(args.backbone)
 
-    # define model
-    # model = get_model(args.model, args.backbone)
-    backbone = get_backbone(args.backbone, castrate=False)
-    in_features = backbone.fc.in_features
-    backbone.fc = nn.Identity()
-    model = backbone
     assert args.eval_from is not None
     save_dict = torch.load(args.eval_from, map_location='cpu')
     msg = model.load_state_dict({k[9:]:v for k, v in save_dict['state_dict'].items() if k.startswith('backbone.')}, strict=True)
@@ -73,9 +63,10 @@ def main(args):
     model = torch.nn.DataParallel(model)
     # if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
-    classifier = nn.Linear(in_features=in_features, out_features=10, bias=True).to(args.device)
+    classifier = nn.Linear(in_features=model.output_dim, out_features=10, bias=True).to(args.device)
+    # if torch.cuda.device_count() > 1: classifier = torch.nn.SyncBatchNorm.convert_sync_batchnorm(classifier)
     classifier = torch.nn.DataParallel(classifier)
-    # breakpoint()
+
 
 
     # define optimizer
@@ -102,15 +93,15 @@ def main(args):
         p_bar=tqdm(train_loader, desc=f'Epoch {epoch}/{args.num_epochs}')
         
         for idx, (images, labels) in enumerate(p_bar):
-            # breakpoint()
+
             classifier.zero_grad()
             with torch.no_grad():
                 feature = model(images.to(args.device))
-            # breakpoint()
+
             preds = classifier(feature)
 
             loss = F.cross_entropy(preds, labels.to(args.device))
-            # loss = model.forward(images1.to(args.device), images2.to(args.device))
+
             loss.backward()
             optimizer.step()
             loss_meter.update(loss.item())

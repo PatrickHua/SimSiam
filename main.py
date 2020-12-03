@@ -3,13 +3,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F 
 import torchvision
+import numpy as np
 from tqdm import tqdm
 from configs import get_args
 from augmentations import get_aug
 from models import get_model
 from tools import AverageMeter
 from datasets import get_dataset
-from optimizers import get_optimizer
+from optimizers import get_optimizer, LR_Scheduler
 
 
 
@@ -53,27 +54,37 @@ def main(args):
     # args.warm_up_epochs
 
     # define lr scheduler
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, args.num_epochs, eta_min=0)
+    # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+    #     optimizer, args.num_epochs, eta_min=0)
+    lr_scheduler = LR_Scheduler(
+        optimizer,
+        args.warmup_epochs, args.warmup_lr, 
+        args.num_epochs, args.base_lr, args.final_lr, 
+        len(train_loader)
+    )
+
+    # args.warmup_epochs
 
     loss_meter = AverageMeter(name='Loss')
 
     # Start training
-    for epoch in tqdm(range(0, args.num_epochs), desc=f'Training'):
+    global_progress = tqdm(range(0, args.stop_at_epoch), desc=f'Training')
+    for epoch in global_progress:
         loss_meter.reset()
         model.train()
-        p_bar=tqdm(train_loader, desc=f'Epoch {epoch}/{args.num_epochs}')
-        # breakpoint()
-        for idx, ((images1, images2), labels) in enumerate(p_bar):
-            # breakpoint()
+
+        local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{args.num_epochs}', disable=args.hide_progress)
+        for idx, ((images1, images2), labels) in enumerate(local_progress):
+
             model.zero_grad()
             loss = model.forward(images1.to(args.device), images2.to(args.device))
             loss.backward()
             optimizer.step()
             loss_meter.update(loss.item())
-            p_bar.set_postfix({"loss":loss_meter.val, 'loss_avg':loss_meter.avg})
+            lr = lr_scheduler.step()
+            local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
+        global_progress.set_postfix({"epoch":epoch, "loss":loss_meter.avg})
 
-        lr_scheduler.step()
 
 
         # Save checkpoint

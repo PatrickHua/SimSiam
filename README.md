@@ -73,7 +73,7 @@ python main.py \
     --optimizer lars_simclr \
     --weight_decay 1e-6 \
     --base_lr 0.3 \
-    --warm_up_epochs 10
+    --warmup_epochs 10
 ```
 
 ### Run BYOL
@@ -90,7 +90,7 @@ python main.py \
     --optimizer lars_simclr \ They use simclr version of lars
     --weight_decay 1.5e-6 \
     --base_lr 0.3 \
-    --warm_up_epochs 10
+    --warmup_epochs 10
 ```
 
 ### TODO
