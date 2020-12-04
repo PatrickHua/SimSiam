@@ -19,7 +19,7 @@ python main.py \
 --head_tail_accuracy \
 --hide_progress \
 --output_dir outputs/cifar10_experiment/ \
---debug
+# --debug
 
 
 
