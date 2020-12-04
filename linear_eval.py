@@ -9,7 +9,7 @@ from augmentations import get_aug
 from models import get_model, get_backbone
 from tools import AverageMeter
 from datasets import get_dataset
-from optimizers import get_optimizer
+from optimizers import get_optimizer, LR_Scheduler
 
 def main(args):
 
@@ -71,8 +71,12 @@ def main(args):
     # args.warm_up_epochs
 
     # define lr scheduler
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, args.num_epochs, eta_min=0)
+    lr_scheduler = LR_Scheduler(
+        optimizer,
+        args.warmup_epochs, args.warmup_lr*args.batch_size/256, 
+        args.num_epochs, args.base_lr*args.batch_size/256, args.final_lr*args.batch_size/256, 
+        len(train_loader)
+    )
 
     loss_meter = AverageMeter(name='Loss')
     acc_meter = AverageMeter(name='Accuracy')
@@ -98,7 +102,7 @@ def main(args):
             loss.backward()
             optimizer.step()
             loss_meter.update(loss.item())
-            lr = lr_scheduler.step()
+            lr_scheduler.step()
             local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
         
 

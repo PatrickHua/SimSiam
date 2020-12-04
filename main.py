@@ -88,7 +88,8 @@ def main(args):
         # 'optimizer':optimizer.state_dict(), # will double the checkpoint file size
         'lr_scheduler':lr_scheduler,
         'args':args,
-        'loss_meter':loss_meter
+        'loss_meter':loss_meter,
+        'plot_logger':plot_logger
     }, model_path)
     print(f"Model saved to {model_path}")
         
@@ -99,6 +100,7 @@ def main(args):
         args.base_lr = 0.02
         args.weight_decay = 0
         args.momentum = 0.9
+        args.warmup_epochs = 0 
         if not args.debug: 
             args.batch_size = 4096
             args.num_epochs = 50
