@@ -18,6 +18,7 @@ class PlotLogger(object):
             ax.set_title(key)
 
         plt.savefig(file, **kwargs)
+        plt.close()
 
 
 

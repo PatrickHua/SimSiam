@@ -76,7 +76,7 @@ def main(args):
             local_progress.set_postfix({'lr':lr, "loss":loss_meter.val})
             plot_logger.update({'epoch':epoch, 'lr':lr, 'loss':loss_meter.val})
         global_progress.set_postfix({"epoch":epoch, "loss_avg":loss_meter.avg})
-        plot_logger.save(os.path.join(args.output_dir, 'logger.png'))
+        plot_logger.save(os.path.join(args.output_dir, 'logger.svg'))
 
     
         # Save checkpoint
