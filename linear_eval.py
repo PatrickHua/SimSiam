@@ -102,7 +102,7 @@ def main(args):
             loss.backward()
             optimizer.step()
             loss_meter.update(loss.item())
-            lr_scheduler.step()
+            lr = lr_scheduler.step()
             local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
         
 
