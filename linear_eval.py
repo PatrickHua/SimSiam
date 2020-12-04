@@ -103,10 +103,10 @@ def main(args):
             loss_meter.update(loss.item())
             lr = lr_scheduler.step()
             local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
-        # global_progress.
         
 
-
+        if args.head_tail_accuracy and epoch != 0 and epoch != args.num_epochs: continue
+        
         local_progress=tqdm(test_loader, desc=f'Test {epoch}/{args.num_epochs}', disable=args.hide_progress)
         classifier.eval()
         correct, total = 0, 0

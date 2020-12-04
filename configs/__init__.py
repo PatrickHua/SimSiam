@@ -54,9 +54,9 @@ def get_args():
     parser.add_argument('--weight_decay', type=float, default=0.0001)
 
     parser.add_argument('--eval_after_train', action='store_true')
+    parser.add_argument('--head_tail_accuracy', action='store_true', help='the acc in first epoch will indicate whether collapse or not, the last epoch shows the final accuracy')
     args = parser.parse_args()
     
-
     if args.debug:
         args.batch_size = 2 
         args.num_epochs = 1 # train only one epoch
