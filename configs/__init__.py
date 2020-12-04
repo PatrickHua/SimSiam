@@ -54,14 +54,14 @@ def get_args():
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--weight_decay', type=float, default=0.0001)
 
-    parser.add_argument('--eval_after_train', action='store_true')
+    parser.add_argument('--eval_after_train', type=str, default=None)
     parser.add_argument('--head_tail_accuracy', action='store_true', help='the acc in first epoch will indicate whether collapse or not, the last epoch shows the final accuracy')
     args = parser.parse_args()
     
     if args.debug:
         args.batch_size = 2 
-        args.stop_at_epoch = 8
-        args.num_epochs = 9 # train only one epoch
+        args.stop_at_epoch = 2
+        args.num_epochs = 3 # train only one epoch
         args.num_workers = 0
 
     assert not None in [args.output_dir, args.data_dir]

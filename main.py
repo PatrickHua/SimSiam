@@ -94,18 +94,14 @@ def main(args):
     print(f"Model saved to {model_path}")
         
 
-    if args.eval_after_train:
+    if args.eval_after_train is not None:
         args.eval_from = model_path
-        
-        args.base_lr = 0.02
-        args.weight_decay = 0
-        args.momentum = 0.9
-        args.warmup_epochs = 0 
-        if not args.debug: 
-            args.batch_size = 4096
-            args.num_epochs = 50
-        # breakpoint()
-        args.optimizer = 'lars'
+        arg_list = [x.strip().lstrip('--').split() for x in args.eval_after_train.split('\n')]
+        args.__dict__.update({x[0]:eval(x[1]) for x in arg_list})
+        if args.debug: 
+            args.batch_size = 2
+            args.num_epochs = 3
+
         linear_eval(args)
 
 if __name__ == "__main__":

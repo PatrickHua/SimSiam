@@ -106,7 +106,7 @@ def main(args):
             local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
         
 
-        if args.head_tail_accuracy and epoch != 0 and epoch != args.num_epochs: continue
+        if args.head_tail_accuracy and epoch != 0 and (epoch+1) != args.num_epochs: continue
 
         local_progress=tqdm(test_loader, desc=f'Test {epoch}/{args.num_epochs}', disable=args.hide_progress)
         classifier.eval()
