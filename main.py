@@ -38,7 +38,7 @@ def main(args):
 
     # define model
     model = get_model(args.model, args.backbone).to(args.device)
-    
+    if args.model == 'simsiam' and args.proj_layers is not None: model.projector.set_layers(args.proj_layers)
     model = torch.nn.DataParallel(model)
     if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     
@@ -95,6 +95,15 @@ def main(args):
 
     if args.eval_after_train:
         args.eval_from = model_path
+        
+        args.base_lr = 0.02
+        args.weight_decay = 0
+        args.momentum = 0.9
+        if not args.debug: 
+            args.batch_size = 4096
+            args.num_epochs = 50
+        # breakpoint()
+        args.optimizer = 'lars'
         linear_eval(args)
 
 if __name__ == "__main__":

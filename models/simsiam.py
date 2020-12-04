@@ -41,12 +41,20 @@ class projection_MLP(nn.Module):
             nn.Linear(hidden_dim, out_dim),
             nn.BatchNorm1d(hidden_dim)
         )
+        self.num_layers = 3
+    def set_layers(self, num_layers):
+        self.num_layers = num_layers
 
     def forward(self, x):
-        # using x.squeeze() will break the program when batch size is 1
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
+        if self.num_layers == 3:
+            x = self.layer1(x)
+            x = self.layer2(x)
+            x = self.layer3(x)
+        elif self.num_layers == 2:
+            x = self.layer1(x)
+            x = self.layer3(x)
+        else:
+            raise Exception
         return x 
 
 

@@ -18,23 +18,19 @@ def main(args):
         args.data_dir, 
         transform=get_aug(args.model, args.image_size, train=False, train_classifier=True), 
         train=True, 
-        download=args.download # default is False
+        download=args.download, # default is False
+        debug_subset_size=args.batch_size if args.debug else None
     )
     test_set = get_dataset(
         args.dataset, 
         args.data_dir, 
         transform=get_aug(args.model, args.image_size, train=False, train_classifier=False), 
         train=False, 
-        download=args.download # default is False
+        download=args.download, # default is False
+        debug_subset_size=args.batch_size if args.debug else None
     )
 
-    if args.debug:
-        args.batch_size = 20
-        args.num_epochs = 2 
-        args.num_workers = 0
-        train_set = torch.utils.data.Subset(train_set, range(0, args.batch_size)) # take only one batch
-        test_set = torch.utils.data.Subset(test_set, range(0, args.batch_size))
-    
+
     train_loader = torch.utils.data.DataLoader(
         dataset=train_set,
         batch_size=args.batch_size,
@@ -80,6 +76,7 @@ def main(args):
 
     loss_meter = AverageMeter(name='Loss')
     acc_meter = AverageMeter(name='Accuracy')
+
     # Start training
     global_progress = tqdm(range(0, args.num_epochs), desc=f'Evaluating')
     for epoch in global_progress:
@@ -106,7 +103,7 @@ def main(args):
         
 
         if args.head_tail_accuracy and epoch != 0 and epoch != args.num_epochs: continue
-        
+
         local_progress=tqdm(test_loader, desc=f'Test {epoch}/{args.num_epochs}', disable=args.hide_progress)
         classifier.eval()
         correct, total = 0, 0

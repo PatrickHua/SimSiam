@@ -44,6 +44,7 @@ def get_args():
     parser.add_argument('--num_epochs', type=int, default=100, help='This will affect learning rate decay')
     parser.add_argument('--stop_at_epoch', type=int, default=None)
     parser.add_argument('--batch_size', type=int, default=512)
+    parser.add_argument('--proj_layers', type=int, default=None, help="number of projector layers. In cifar experiment, this is set to 2")
     # optimization params
     parser.add_argument('--optimizer', type=str, default='sgd', help='sgd, lars(from lars paper), lars_simclr(used in simclr and byol), larc(used in swav)')
     parser.add_argument('--warmup_epochs', type=int, default=0, help='learning rate will be linearly scaled during warm up period')
