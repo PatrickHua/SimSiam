@@ -17,8 +17,8 @@ python main.py \
 --eval_after_train \
 --head_tail_accuracy \
 --hide_progress \
---output_dir outputs/ \
---debug
+--output_dir outputs/cifar10_experiment/ \
+# --debug
 
 
 

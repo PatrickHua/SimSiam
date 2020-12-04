@@ -4,7 +4,6 @@ from collections import OrderedDict
 
 class PlotLogger(object):
     def __init__(self, params=['loss']):
-        self.fig, self.axes = plt.subplots(nrows=len(params), ncols=1)
         self.logger = OrderedDict({param:[] for param in params})
     def update(self, ordered_dict):
         # self.logger.keys()
@@ -13,7 +12,8 @@ class PlotLogger(object):
             self.logger[key].append(value)
 
     def save(self, file, **kwargs):
-        for ax, (key, value) in zip(self.axes, self.logger.items()):
+        fig, axes = plt.subplots(nrows=len(self.logger), ncols=1)
+        for ax, (key, value) in zip(axes, self.logger.items()):
             ax.plot(value)
             ax.set_title(key)
 

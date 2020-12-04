@@ -59,8 +59,8 @@ def get_args():
     
     if args.debug:
         args.batch_size = 2 
-        args.stop_at_epoch = 1
-        args.num_epochs = 2 # train only one epoch
+        args.stop_at_epoch = 8
+        args.num_epochs = 9 # train only one epoch
         args.num_workers = 0
 
     assert not None in [args.output_dir, args.data_dir]
