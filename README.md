@@ -45,7 +45,12 @@ I made an example training script for the cifar10 experiment in Appendix D.
 ```
 sh configs/cifar_experiment.sh
 ```
+```
+Training: 100%|#################################| 800/800 [3:27:50<00:00, 15.59s/it, epoch=799, loss_avg=-.895]
+Model saved to outputs/cifar10_experiment/simsiam-cifar10-epoch800.pth
+Evaluating: 100%|###################################| 100/100 [08:24<00:00,  5.04s/it, epoch=99, accuracy=80.8]
 
+```
 
 
 ### Run SimCLR

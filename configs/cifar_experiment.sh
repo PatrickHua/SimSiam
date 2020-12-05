@@ -13,7 +13,7 @@ python main.py \
 --base_lr 0.03 \
 --final_lr 0 \
 --num_epochs 800 \
---stop_at_epoch 100 \
+--stop_at_epoch 800 \
 --batch_size 512 \
 --eval_after_train "--base_lr float(30)
                     --weight_decay float(0)
