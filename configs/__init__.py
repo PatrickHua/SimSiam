@@ -1,7 +1,6 @@
 import argparse
 import os
 import torch
-from .byol_cfg import byol_args
 
 import numpy as np
 import torch
@@ -74,10 +73,5 @@ def get_args():
         args.stop_at_epoch = args.num_epochs
 
     if args.use_default_hyperparameters:
-        if args.model == 'byol':
-            args.__dict__.update(byol_args)
-        # elif args.model == ''
-        else:
-            raise NotImplementedError
-    
+        raise NotImplementedError
     return args

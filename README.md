@@ -37,29 +37,19 @@ Epoch 0/1: 100%|█████████████████████�
 Training: 100%|███████████████████████████████████████████████████████████████████| 1/1 [00:03<00:00,  3.83s/it]
 Model saved to ./outputs/simsiam-cifar10-epoch1.pth
 ```
-
+>`export DATA="/path/to/your/datasets/"` and `export OUTPUT="/path/to/your/output/"` will save you the trouble of entering the folder name everytime!
 
 ### Run SimSiam
-The default model is simsiam and all default configurations are set to be the same as the simsiam paper (optimizers, models, datasets, image size ...),
-simply run:
+I made an example training script for the cifar10 experiment in Appendix D.
 
 ```
-export DATA="/path/to/your/datasets/"
-export OUTPUT="/path/to/your/output/"
-python main.py --dataset imagenet
-```
-OR
-```
-python main.py --dataset imagenet \
-    --data_dir /path/to/your/datasets/ \
-    --output_dir /path/to/your/output/ \
+sh configs/cifar_experiment.sh
 ```
 
 
 
 ### Run SimCLR
-default hyperparameters are for simsiam, so you'll have to set them manually for simclr ...
-maybe I should write a list of configurations for different models ...
+
 ```
 python main.py \
     --model simclr \
@@ -94,8 +84,7 @@ python main.py \
 ```
 
 ### TODO
-- complete code for byol, simclr and swav
-- add code for linear evaluation
+
 - convert from data-parallel (DP) to distributed data-parallel (DDP)
 - create PyPI package `pip install simsiam-pytorch`
 
