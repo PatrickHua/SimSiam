@@ -1,7 +1,6 @@
 import argparse
 import os
 import torch
-from .byol_cfg import byol_args
 
 import numpy as np
 import torch
@@ -44,6 +43,7 @@ def get_args():
     parser.add_argument('--num_epochs', type=int, default=100, help='This will affect learning rate decay')
     parser.add_argument('--stop_at_epoch', type=int, default=None)
     parser.add_argument('--batch_size', type=int, default=512)
+    parser.add_argument('--proj_layers', type=int, default=None, help="number of projector layers. In cifar experiment, this is set to 2")
     # optimization params
     parser.add_argument('--optimizer', type=str, default='sgd', help='sgd, lars(from lars paper), lars_simclr(used in simclr and byol), larc(used in swav)')
     parser.add_argument('--warmup_epochs', type=int, default=0, help='learning rate will be linearly scaled during warm up period')
@@ -54,6 +54,7 @@ def get_args():
     parser.add_argument('--weight_decay', type=float, default=0.0001)
 
     parser.add_argument('--eval_after_train', action='store_true')
+    parser.add_argument('--head_tail_accuracy', action='store_true', help='the acc in first epoch will indicate whether collapse or not, the last epoch shows the final accuracy')
 
     parser.add_argument('--local_rank', type=int, default=-1)
 
@@ -63,12 +64,15 @@ def get_args():
         print(f'Running in distributed mode - process: {args.local_rank}')
         args.device = f'cuda:{args.local_rank}'
 
+    
     if args.debug:
         args.batch_size = 2 
-        args.num_epochs = 1 # train only one epoch
+        args.stop_at_epoch = 2
+        args.num_epochs = 3 # train only one epoch
         args.num_workers = 0
 
     assert not None in [args.output_dir, args.data_dir]
+    os.makedirs(args.output_dir, exist_ok=True)
     # assert args.stop_at_epoch <= args.num_epochs
     if args.stop_at_epoch is not None:
         if args.stop_at_epoch > args.num_epochs:
@@ -77,10 +81,5 @@ def get_args():
         args.stop_at_epoch = args.num_epochs
 
     if args.use_default_hyperparameters:
-        if args.model == 'byol':
-            args.__dict__.update(byol_args)
-        # elif args.model == ''
-        else:
-            raise NotImplementedError
-    
+        raise NotImplementedError
     return args

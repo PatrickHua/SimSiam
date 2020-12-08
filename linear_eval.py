@@ -9,7 +9,7 @@ from augmentations import get_aug
 from models import get_model, get_backbone
 from tools import AverageMeter
 from datasets import get_dataset
-from optimizers import get_optimizer
+from optimizers import get_optimizer, LR_Scheduler
 
 def main(args):
 
@@ -18,23 +18,19 @@ def main(args):
         args.data_dir, 
         transform=get_aug(args.model, args.image_size, train=False, train_classifier=True), 
         train=True, 
-        download=args.download # default is False
+        download=args.download, # default is False
+        debug_subset_size=args.batch_size if args.debug else None
     )
     test_set = get_dataset(
         args.dataset, 
         args.data_dir, 
         transform=get_aug(args.model, args.image_size, train=False, train_classifier=False), 
         train=False, 
-        download=args.download # default is False
+        download=args.download, # default is False
+        debug_subset_size=args.batch_size if args.debug else None
     )
 
-    if args.debug:
-        args.batch_size = 20
-        args.num_epochs = 2 
-        args.num_workers = 0
-        train_set = torch.utils.data.Subset(train_set, range(0, args.batch_size)) # take only one batch
-        test_set = torch.utils.data.Subset(test_set, range(0, args.batch_size))
-    
+
     train_loader = torch.utils.data.DataLoader(
         dataset=train_set,
         batch_size=args.batch_size,
@@ -80,11 +76,16 @@ def main(args):
     # TODO: linear lr warm up for byol simclr swav
     # args.warm_up_epochs
     # define lr scheduler
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, args.num_epochs, eta_min=0)
+    lr_scheduler = LR_Scheduler(
+        optimizer,
+        args.warmup_epochs, args.warmup_lr*args.batch_size/256, 
+        args.num_epochs, args.base_lr*args.batch_size/256, args.final_lr*args.batch_size/256, 
+        len(train_loader)
+    )
 
     loss_meter = AverageMeter(name='Loss')
     acc_meter = AverageMeter(name='Accuracy')
+
     # Start training
     global_progress = tqdm(range(0, args.num_epochs), desc=f'Evaluating')
     for epoch in global_progress:
@@ -108,9 +109,9 @@ def main(args):
             loss_meter.update(loss.item())
             lr = lr_scheduler.step()
             local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
-        # global_progress.
         
 
+        if args.head_tail_accuracy and epoch != 0 and (epoch+1) != args.num_epochs: continue
 
         local_progress=tqdm(test_loader, desc=f'Test {epoch}/{args.num_epochs}', disable=args.hide_progress)
         classifier.eval()

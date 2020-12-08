@@ -8,10 +8,11 @@ from tqdm import tqdm
 from configs import get_args
 from augmentations import get_aug
 from models import get_model
-from tools import AverageMeter
+from tools import AverageMeter, PlotLogger
 from datasets import get_dataset
 from optimizers import get_optimizer, LR_Scheduler
 from linear_eval import main as linear_eval
+
 
 
 
@@ -37,6 +38,7 @@ def main(args):
 
     # define model
     model = get_model(args.model, args.backbone).to(args.device)
+    if args.model == 'simsiam' and args.proj_layers is not None: model.projector.set_layers(args.proj_layers)
     
     if args.local_rank >= 0:
         torch.cuda.set_device(args.local_rank)
@@ -55,13 +57,13 @@ def main(args):
 
     lr_scheduler = LR_Scheduler(
         optimizer,
-        args.warmup_epochs, args.warmup_lr, 
-        args.num_epochs, args.base_lr, args.final_lr, 
+        args.warmup_epochs, args.warmup_lr*args.batch_size/256, 
+        args.num_epochs, args.base_lr*args.batch_size/256, args.final_lr*args.batch_size/256, 
         len(train_loader)
     )
 
     loss_meter = AverageMeter(name='Loss')
-
+    plot_logger = PlotLogger(params=['epoch', 'lr', 'loss'])
     # Start training
     global_progress = tqdm(range(0, args.stop_at_epoch), desc=f'Training')
     for epoch in global_progress:
@@ -77,26 +79,34 @@ def main(args):
             optimizer.step()
             loss_meter.update(loss.item())
             lr = lr_scheduler.step()
-            local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
-        global_progress.set_postfix({"epoch":epoch, "loss":loss_meter.avg})
+            local_progress.set_postfix({'lr':lr, "loss":loss_meter.val})
+            plot_logger.update({'epoch':epoch, 'lr':lr, 'loss':loss_meter.val})
+        global_progress.set_postfix({"epoch":epoch, "loss_avg":loss_meter.avg})
+        plot_logger.save(os.path.join(args.output_dir, 'logger.svg'))
 
-
-
-        # Save checkpoint
-        os.makedirs(args.output_dir, exist_ok=True)
-        model_path = os.path.join(args.output_dir, f'{args.model}-{args.dataset}-epoch{epoch+1}.pth')
-        torch.save({
-            'epoch': epoch+1,
-            'state_dict':model.state_dict(),
-            # 'optimizer':optimizer.state_dict(), # will double the checkpoint file size
-            'lr_scheduler':lr_scheduler,
-            'args':args,
-            'loss_meter':loss_meter
-        }, model_path)
+    
+    # Save checkpoint
+    os.makedirs(args.output_dir, exist_ok=True)
+    model_path = os.path.join(args.output_dir, f'{args.model}-{args.dataset}-epoch{epoch+1}.pth')
+    torch.save({
+        'epoch': epoch+1,
+        'state_dict':model.state_dict(),
+        # 'optimizer':optimizer.state_dict(), # will double the checkpoint file size
+        'lr_scheduler':lr_scheduler,
+        'args':args,
+        'loss_meter':loss_meter,
+        'plot_logger':plot_logger
+    }, model_path)
     print(f"Model saved to {model_path}")
 
-    if args.eval_after_train:
+    if args.eval_after_train is not None:
         args.eval_from = model_path
+        arg_list = [x.strip().lstrip('--').split() for x in args.eval_after_train.split('\n')]
+        args.__dict__.update({x[0]:eval(x[1]) for x in arg_list})
+        if args.debug: 
+            args.batch_size = 2
+            args.num_epochs = 3
+
         linear_eval(args)
 
 if __name__ == "__main__":

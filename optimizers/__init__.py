@@ -7,7 +7,7 @@ from .lr_scheduler import LR_Scheduler
 
 def get_optimizer(name, model, lr, momentum, weight_decay):
     if name == 'lars':
-        optimizer = LARS(model.parameters, lr=lr, momentum=momentum, weight_decay=weight_decay)
+        optimizer = LARS(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     elif name == 'sgd':
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     elif name == 'lars_simclr':
