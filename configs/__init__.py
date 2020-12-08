@@ -53,7 +53,7 @@ def get_args():
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--weight_decay', type=float, default=0.0001)
 
-    parser.add_argument('--eval_after_train', action='store_true')
+    parser.add_argument('--eval_after_train', type=str)
     parser.add_argument('--head_tail_accuracy', action='store_true', help='the acc in first epoch will indicate whether collapse or not, the last epoch shows the final accuracy')
 
     parser.add_argument('--local_rank', type=int, default=-1)
