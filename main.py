@@ -45,7 +45,8 @@ def main(args):
         torch.distributed.init_process_group(backend="nccl", init_method="env://")
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.local_rank], output_device=args.local_rank
+            model, device_ids=[args.local_rank], output_device=args.local_rank,
+            find_unused_parameters=True
         )
 
     # define optimizer
