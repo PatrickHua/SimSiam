@@ -60,10 +60,16 @@ def main(args):
     
     # print(msg)
     model = model.to(args.device)
-    model = torch.nn.DataParallel(model)
+    if args.local_rank >= 0:
+        torch.cuda.set_device(args.local_rank)
+        torch.distributed.init_process_group(backend="nccl", init_method="env://")
+        model = torch.nn.parallel.DistributedDataParallel(
+            model, device_ids=[args.local_rank], output_device=args.local_rank
+        )
+        classifier = torch.nn.parallel.DistributedDataParallel(
+            classifier, device_ids=[args.local_rank], output_device=args.local_rank
+        )
 
-    # if torch.cuda.device_count() > 1: classifier = torch.nn.SyncBatchNorm.convert_sync_batchnorm(classifier)
-    classifier = torch.nn.DataParallel(classifier)
     # define optimizer
     optimizer = get_optimizer(
         args.optimizer, classifier, 
@@ -73,7 +79,6 @@ def main(args):
 
     # TODO: linear lr warm up for byol simclr swav
     # args.warm_up_epochs
-
     # define lr scheduler
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, args.num_epochs, eta_min=0)

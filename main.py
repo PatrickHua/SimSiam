@@ -38,9 +38,14 @@ def main(args):
     # define model
     model = get_model(args.model, args.backbone).to(args.device)
     
-    model = torch.nn.DataParallel(model)
-    if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    
+    if args.local_rank >= 0:
+        torch.cuda.set_device(args.local_rank)
+        torch.distributed.init_process_group(backend="nccl", init_method="env://")
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        model = torch.nn.parallel.DistributedDataParallel(
+            model, device_ids=[args.local_rank], output_device=args.local_rank
+        )
+
     # define optimizer
     optimizer = get_optimizer(
         args.optimizer, model, 
@@ -82,7 +87,7 @@ def main(args):
         model_path = os.path.join(args.output_dir, f'{args.model}-{args.dataset}-epoch{epoch+1}.pth')
         torch.save({
             'epoch': epoch+1,
-            'state_dict':model.module.state_dict(),
+            'state_dict':model.state_dict(),
             # 'optimizer':optimizer.state_dict(), # will double the checkpoint file size
             'lr_scheduler':lr_scheduler,
             'args':args,
