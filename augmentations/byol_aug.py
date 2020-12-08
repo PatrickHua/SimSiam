@@ -1,5 +1,5 @@
 from torchvision import transforms
-
+from PIL import Image, ImageOps
 
 
 imagenet_norm = [[0.485, 0.456, 0.406],[0.229, 0.224, 0.225]]
@@ -21,8 +21,10 @@ class BYOL_transform: # Table 6
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomApply([transforms.ColorJitter(0.4,0.4,0.2,0.1)], p=0.8),
             transforms.RandomGrayscale(p=0.2),
-            transforms.RandomApply([GaussianBlur(kernel_size=int(0.1 * image_size))], p=0.1),
+            # transforms.RandomApply([GaussianBlur(kernel_size=int(0.1 * image_size))], p=0.1),
+            transforms.RandomApply([transforms.GaussianBlur(kernel_size=image_size//20*2+1, sigma=(0.1, 2.0))], p=0.1),
             transforms.RandomApply([Solarization()], p=0.2),
+            
             transforms.ToTensor(),
             transforms.Normalize(*normalize)
         ])
@@ -54,3 +56,14 @@ class Transform_single:
 
     def __call__(self, x):
         return self.transform(x)
+
+
+
+class Solarization():
+    # ImageFilter
+    def __init__(self, threshold=128):
+        self.threshold = threshold
+    def __call__(self, image):
+        return ImageOps.solarize(image, self.threshold)
+
+

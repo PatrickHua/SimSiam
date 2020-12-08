@@ -1,29 +1,20 @@
 from .simsiam_aug import SimSiamTransform
 from .eval_aug import Transform_single
 from .byol_aug import BYOL_transform
-
+from .simclr_aug import SimCLRTransform
 def get_aug(name, image_size, train, train_classifier=True):
-    if name == 'simsiam':
-        if train:
+
+    if train:
+        if name == 'simsiam':
             augmentation = SimSiamTransform(image_size)
-        else:
-            if train_classifier:
-                augmentation = Transform_single(image_size, train=True)
-            else:
-                augmentation = Transform_single(image_size, train=False)
-            # raise NotImplementedError
-    
-    elif name == 'byol':
-        if train:
+        elif name == 'byol':
             augmentation = BYOL_transform(image_size)
+        elif name == 'simclr':
+            augmentation = SimCLRTransform(image_size)
         else:
             raise NotImplementedError
-    elif name == 'simclr':
-        if train:
-            TODO    
-            
     else:
-        raise NotImplementedError
+        augmentation = Transform_single(image_size, train=train_classifier)
 
     return augmentation
 
