@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python main.py \
+CUDA_VISIBLE_DEVICES=1,2,3,4 python -m torch.distributed.launch --nproc_per_node 4 main.py \
 --dataset cifar10 \
 --data_dir data/ \
 --download \
