@@ -47,6 +47,10 @@ def main(args, model=None):
         drop_last=True
     )
 
+    model = get_backbone(args.backbone)
+    classifier = nn.Linear(in_features=model.output_dim, out_features=len(train_set.classes), bias=True).to(args.device)
+
+
     if args.local_rank >= 0 and not torch.distributed.is_initialized():
         torch.cuda.set_device(args.local_rank)
         torch.distributed.init_process_group(backend="nccl", init_method="env://")
