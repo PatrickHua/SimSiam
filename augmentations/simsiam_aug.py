@@ -1,9 +1,6 @@
 import torchvision.transforms as T
-try:
-    from torchvision.transforms import GaussianBlur
-except ImportError:
-    from .gaussian_blur import GaussianBlur
-    T.GaussianBlur = GaussianBlur
+from torchvision.transforms import GaussianBlur
+
     
 imagenet_mean_std = [[0.485, 0.456, 0.406],[0.229, 0.224, 0.225]]
 
