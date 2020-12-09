@@ -35,8 +35,7 @@ def get_args():
     parser.add_argument('--resume', type=str, default=None)
     parser.add_argument('--eval_from', type=str, default=None)
 
-    parser.add_argument('--hide_progress', action='store_true')
-    parser.add_argument('--use_default_hyperparameters', action='store_true')
+    parser.add_argument('--hide_progress', action='store_true', help='Hide the progress bars for inner training loops')
     # model related params
     parser.add_argument('--model', type=str, default='simsiam')
     parser.add_argument('--backbone', type=str, default='resnet50')
@@ -80,6 +79,5 @@ def get_args():
     else:
         args.stop_at_epoch = args.num_epochs
 
-    if args.use_default_hyperparameters:
-        raise NotImplementedError
+
     return args

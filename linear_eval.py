@@ -19,7 +19,7 @@ def main(args, model=None):
         transform=get_aug(args.model, args.image_size, train=False, train_classifier=True), 
         train=True, 
         download=args.download, # default is False
-        debug_subset_size=args.batch_size if args.debug else None
+        debug_subset_size=args.batch_size if args.debug else None # Use a subset of dataset for debugging.
     )
     test_set = get_dataset(
         args.dataset, 
