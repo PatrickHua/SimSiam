@@ -56,7 +56,7 @@ def main(args, model=None):
         torch.distributed.init_process_group(backend="nccl", init_method="env://")
 
     if model is None:
-        model = get_backbone(args.backbone)
+        model = get_backbone(args.backbone).to(args.device)
         save_dict = torch.load(args.eval_from, map_location=args.device)
         model.load_state_dict({k[9:]:v for k, v in save_dict['state_dict'].items() if k.startswith('backbone.')}, strict=True)
     
