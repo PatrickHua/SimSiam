@@ -47,10 +47,6 @@ def main(args, model=None):
         drop_last=True
     )
 
-    model = get_backbone(args.backbone)
-    classifier = nn.Linear(in_features=model.output_dim, out_features=len(train_set.classes), bias=True).to(args.device)
-
-
     if args.local_rank >= 0 and not torch.distributed.is_initialized():
         torch.cuda.set_device(args.local_rank)
         torch.distributed.init_process_group(backend="nccl", init_method="env://")
@@ -58,7 +54,8 @@ def main(args, model=None):
     if model is None:
         model = get_backbone(args.backbone).to(args.device)
         save_dict = torch.load(args.eval_from, map_location=args.device)
-        model.load_state_dict({k[9:]:v for k, v in save_dict['state_dict'].items() if k.startswith('backbone.')}, strict=True)
+        state_dict = {k[7:] if k.startswith('module.') else k: v for k, v in save_dict['state_dict'].items()}
+        model.load_state_dict({k[9:]:v for k, v in state_dict.items() if k.startswith('backbone.')}, strict=True)
     
     output_dim = model.output_dim
     if args.local_rank >= 0:
