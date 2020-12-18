@@ -11,15 +11,15 @@ from tools import AverageMeter
 from datasets import get_dataset
 from optimizers import get_optimizer, LR_Scheduler
 
-def main(args, model=None):
-    assert args.eval_from is not None or model is not None
+def main(args):
+
     train_set = get_dataset(
         args.dataset, 
         args.data_dir, 
         transform=get_aug(args.model, args.image_size, train=False, train_classifier=True), 
         train=True, 
         download=args.download, # default is False
-        debug_subset_size=args.batch_size if args.debug else None # Use a subset of dataset for debugging.
+        debug_subset_size=args.batch_size if args.debug else None
     )
     test_set = get_dataset(
         args.dataset, 
@@ -30,6 +30,7 @@ def main(args, model=None):
         debug_subset_size=args.batch_size if args.debug else None
     )
 
+
     train_loader = torch.utils.data.DataLoader(
         dataset=train_set,
         batch_size=args.batch_size,
@@ -39,42 +40,26 @@ def main(args, model=None):
         drop_last=True
     )
     test_loader = torch.utils.data.DataLoader(
-        dataset=test_set,
+        dataset=train_set,
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.num_workers,
         pin_memory=True,
         drop_last=True
     )
-    if args.local_rank >= 0 and not torch.distributed.is_initialized():
-        torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(backend="nccl", init_method="env://")
+    model = get_backbone(args.backbone)
+    classifier = nn.Linear(in_features=model.output_dim, out_features=10, bias=True).to(args.device)
 
-    model = get_backbone(args.backbone).to(args.device)
-    classifier = nn.Linear(in_features=model.output_dim, out_features=len(train_set.classes), bias=True).to(args.device)
-
-
-
-    if model is None:
-        model = get_backbone(args.backbone).to(args.device)
-        save_dict = torch.load(args.eval_from, map_location=args.device)
-        state_dict = {k[7:] if k.startswith('module.') else k: v for k, v in save_dict['state_dict'].items()}
-        model.load_state_dict({k[9:]:v for k, v in state_dict.items() if k.startswith('backbone.')}, strict=True)
+    assert args.eval_from is not None
+    save_dict = torch.load(args.eval_from, map_location='cpu')
+    msg = model.load_state_dict({k[9:]:v for k, v in save_dict['state_dict'].items() if k.startswith('backbone.')}, strict=True)
     
-    output_dim = model.output_dim
-    if args.local_rank >= 0:
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model) 
-        model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.local_rank], output_device=args.local_rank,
-            find_unused_parameters=True
-        )
-    
-    classifier = nn.Linear(in_features=output_dim, out_features=10, bias=True).to(args.device)
-    if args.local_rank >= 0:
-        classifier = torch.nn.parallel.DistributedDataParallel(
-            classifier, device_ids=[args.local_rank], output_device=args.local_rank
-        )
+    # print(msg)
+    model = model.to(args.device)
+    model = torch.nn.DataParallel(model)
 
+    # if torch.cuda.device_count() > 1: classifier = torch.nn.SyncBatchNorm.convert_sync_batchnorm(classifier)
+    classifier = torch.nn.DataParallel(classifier)
     # define optimizer
     optimizer = get_optimizer(
         args.optimizer, classifier, 
@@ -84,6 +69,7 @@ def main(args, model=None):
 
     # TODO: linear lr warm up for byol simclr swav
     # args.warm_up_epochs
+
     # define lr scheduler
     lr_scheduler = LR_Scheduler(
         optimizer,

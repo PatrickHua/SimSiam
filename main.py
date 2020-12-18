@@ -38,18 +38,10 @@ def main(args):
 
     # define model
     model = get_model(args.model, args.backbone).to(args.device)
-    backbone = model.backbone
     if args.model == 'simsiam' and args.proj_layers is not None: model.projector.set_layers(args.proj_layers)
+    model = torch.nn.DataParallel(model)
+    if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     
-    if args.local_rank >= 0:
-        torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(backend="nccl", init_method="env://")
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.local_rank], output_device=args.local_rank,
-            find_unused_parameters=True
-        )
-
     # define optimizer
     optimizer = get_optimizer(
         args.optimizer, model, 
@@ -66,7 +58,6 @@ def main(args):
 
     loss_meter = AverageMeter(name='Loss')
     plot_logger = PlotLogger(params=['epoch', 'lr', 'loss'])
-    os.makedirs(args.output_dir, exist_ok=True)
     # Start training
     global_progress = tqdm(range(0, args.stop_at_epoch), desc=f'Training')
     for epoch in global_progress:
@@ -88,29 +79,30 @@ def main(args):
         plot_logger.save(os.path.join(args.output_dir, 'logger.svg'))
 
     
-    # Save checkpoint
-    if args.local_rank <= 0: 
-        model_path = os.path.join(args.output_dir, f'{args.model}-{args.dataset}-epoch{args.stop_at_epoch}.pth')
-        torch.save({
-            'epoch': args.stop_at_epoch,
-            'state_dict': model.state_dict(),
-            # 'optimizer':optimizer.state_dict(), # will double the checkpoint file size
-            'lr_scheduler':lr_scheduler,
-            'args':args,
-            'loss_meter':loss_meter,
-            'plot_logger':plot_logger
-        }, model_path)
-        print(f"Model saved to {model_path}")
+        # Save checkpoint
+        
+    model_path = os.path.join(args.output_dir, f'{args.model}-{args.dataset}-epoch{epoch+1}.pth')
+    torch.save({
+        'epoch': epoch+1,
+        'state_dict':model.module.state_dict(),
+        # 'optimizer':optimizer.state_dict(), # will double the checkpoint file size
+        'lr_scheduler':lr_scheduler,
+        'args':args,
+        'loss_meter':loss_meter,
+        'plot_logger':plot_logger
+    }, model_path)
+    print(f"Model saved to {model_path}")
+        
 
     if args.eval_after_train is not None:
+        args.eval_from = model_path
         arg_list = [x.strip().lstrip('--').split() for x in args.eval_after_train.split('\n')]
         args.__dict__.update({x[0]:eval(x[1]) for x in arg_list})
-        args.distributed_initialized = True
         if args.debug: 
             args.batch_size = 2
             args.num_epochs = 3
 
-        linear_eval(args, backbone)
+        linear_eval(args)
 
 if __name__ == "__main__":
     main(args=get_args())

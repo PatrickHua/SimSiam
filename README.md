@@ -6,7 +6,7 @@ This repo also provides pytorch implementations for simclr, byol and swav. I wro
 
 ### Dependencies
 
-If you don't have python 3.8 environment:
+If you don't have python 3 environment:
 ```
 conda create -n simsiam python=3.8
 conda activate simsiam
@@ -45,12 +45,6 @@ I made an example training script for the cifar10 experiment in Appendix D.
 ```
 sh configs/cifar_experiment.sh
 ```
-
-to run in parallel with Distributed Data-Parallel (DDP) use:
-```
-sh configs/cifar_experiment_dist.sh
-```
-
 ```
 Training: 100%|#################################| 800/800 [3:27:50<00:00, 15.59s/it, epoch=799, loss_avg=-.895]
 Model saved to outputs/cifar10_experiment/simsiam-cifar10-epoch800.pth

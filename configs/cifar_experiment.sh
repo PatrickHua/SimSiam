@@ -1,9 +1,6 @@
 #!/bin/bash
-
 python main.py \
 --dataset cifar10 \
---data_dir data/ \
---download \
 --image_size 32 \
 --model simsiam \
 --proj_layers 2 \
@@ -23,7 +20,7 @@ python main.py \
                     --momentum float(0.9)
                     --warmup_epochs int(0)
                     --batch_size int(256)
-                    --num_epochs int(30)
+                    --num_epochs int(100)
                     --optimizer str('sgd')" \
 --head_tail_accuracy \
 --hide_progress \
