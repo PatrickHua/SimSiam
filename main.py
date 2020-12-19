@@ -53,7 +53,8 @@ def main(args):
         optimizer,
         args.warmup_epochs, args.warmup_lr*args.batch_size/256, 
         args.num_epochs, args.base_lr*args.batch_size/256, args.final_lr*args.batch_size/256, 
-        len(train_loader)
+        len(train_loader),
+        constant_predictor_lr=True # see the end of section 4.2 predictor
     )
 
     loss_meter = AverageMeter(name='Loss')

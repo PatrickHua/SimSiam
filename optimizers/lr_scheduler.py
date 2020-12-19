@@ -4,7 +4,9 @@ import numpy as np
 
 
 class LR_Scheduler(object):
-    def __init__(self, optimizer, warmup_epochs, warmup_lr, num_epochs, base_lr, final_lr, iter_per_epoch):
+    def __init__(self, optimizer, warmup_epochs, warmup_lr, num_epochs, base_lr, final_lr, iter_per_epoch, constant_predictor_lr):
+        self.base_lr = base_lr
+        self.constant_predictor_lr = constant_predictor_lr
         warmup_iter = iter_per_epoch * warmup_epochs
         warmup_lr_schedule = np.linspace(warmup_lr, base_lr, warmup_iter)
         decay_iter = iter_per_epoch * (num_epochs - warmup_epochs)
@@ -15,7 +17,12 @@ class LR_Scheduler(object):
         self.iter = 0 
     def step(self):
         for param_group in self.optimizer.param_groups:
-            lr = param_group['lr'] = self.lr_schedule[self.iter]
+
+            if self.constant_predictor_lr and param_group['name'] == 'predictor':
+                param_group['lr'] = self.base_lr
+            else:
+                lr = param_group['lr'] = self.lr_schedule[self.iter]
+        
         self.iter += 1
         return lr
 
