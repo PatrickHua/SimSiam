@@ -67,15 +67,12 @@ def main(args):
         momentum=args.momentum, 
         weight_decay=args.weight_decay)
 
-    # TODO: linear lr warm up for byol simclr swav
-    # args.warm_up_epochs
-
     # define lr scheduler
     lr_scheduler = LR_Scheduler(
         optimizer,
         args.warmup_epochs, args.warmup_lr*args.batch_size/256, 
         args.num_epochs, args.base_lr*args.batch_size/256, args.final_lr*args.batch_size/256, 
-        len(train_loader)
+        len(train_loader),
     )
 
     loss_meter = AverageMeter(name='Loss')
