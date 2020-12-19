@@ -40,7 +40,7 @@ def main(args):
         drop_last=True
     )
     test_loader = torch.utils.data.DataLoader(
-        dataset=train_set,
+        dataset=test_set,
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.num_workers,
