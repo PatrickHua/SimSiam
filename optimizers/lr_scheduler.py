@@ -4,7 +4,7 @@ import numpy as np
 
 
 class LR_Scheduler(object):
-    def __init__(self, optimizer, warmup_epochs, warmup_lr, num_epochs, base_lr, final_lr, iter_per_epoch, constant_predictor_lr):
+    def __init__(self, optimizer, warmup_epochs, warmup_lr, num_epochs, base_lr, final_lr, iter_per_epoch, constant_predictor_lr=False):
         self.base_lr = base_lr
         self.constant_predictor_lr = constant_predictor_lr
         warmup_iter = iter_per_epoch * warmup_epochs
