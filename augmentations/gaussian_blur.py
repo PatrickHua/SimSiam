@@ -7,13 +7,14 @@ So I copy the functions here
 
 import torch
 from torch import Tensor
-from torchvision.transforms.functional import to_pil_image
+from torchvision.transforms.functional import to_pil_image, to_tensor
+from torch.nn.functional import conv2d, pad as torch_pad
 from typing import Any, List, Sequence, Optional
 import numbers
 import numpy as np
 import torch
 from PIL import Image
-
+from typing import Tuple
 
 class GaussianBlur(torch.nn.Module):
     """Blurs image with randomly chosen Gaussian blur.
@@ -74,7 +75,7 @@ class GaussianBlur(torch.nn.Module):
             PIL Image or Tensor: Gaussian blurred image
         """
         sigma = self.get_params(self.sigma[0], self.sigma[1])
-        return F.gaussian_blur(img, self.kernel_size, [sigma, sigma])
+        return gaussian_blur(img, self.kernel_size, [sigma, sigma])
 
     def __repr__(self):
         s = '(kernel_size={}, '.format(self.kernel_size)
@@ -95,6 +96,79 @@ def _setup_size(size, error_msg):
         raise ValueError(error_msg)
 
     return size
+def _is_tensor_a_torch_image(x: Tensor) -> bool:
+    return x.ndim >= 2
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:
+    ksize_half = (kernel_size - 1) * 0.5
+
+    x = torch.linspace(-ksize_half, ksize_half, steps=kernel_size)
+    pdf = torch.exp(-0.5 * (x / sigma).pow(2))
+    kernel1d = pdf / pdf.sum()
+
+    return kernel1d
+
+def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) -> Tuple[Tensor, bool, bool, torch.dtype]:
+    need_squeeze = False
+    # make image NCHW
+    if img.ndim < 4:
+        img = img.unsqueeze(dim=0)
+        need_squeeze = True
+
+    out_dtype = img.dtype
+    need_cast = False
+    if out_dtype != req_dtype:
+        need_cast = True
+        img = img.to(req_dtype)
+    return img, need_cast, need_squeeze, out_dtype
+def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtype: torch.dtype):
+    if need_squeeze:
+        img = img.squeeze(dim=0)
+
+    if need_cast:
+        # it is better to round before cast
+        img = torch.round(img).to(out_dtype)
+
+    return img
+def _get_gaussian_kernel2d(
+        kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
+) -> Tensor:
+    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0]).to(device, dtype=dtype)
+    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1]).to(device, dtype=dtype)
+    kernel2d = torch.mm(kernel1d_y[:, None], kernel1d_x[None, :])
+    return kernel2d
+def _gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Tensor:
+    """PRIVATE METHOD. Performs Gaussian blurring on the img by given kernel.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
+
+    Args:
+        img (Tensor): Image to be blurred
+        kernel_size (sequence of int or int): Kernel size of the Gaussian kernel ``(kx, ky)``.
+        sigma (sequence of float or float, optional): Standard deviation of the Gaussian kernel ``(sx, sy)``.
+
+    Returns:
+        Tensor: An image that is blurred using gaussian kernel of given parameters
+    """
+    if not (isinstance(img, torch.Tensor) or _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
+    kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
+
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, kernel.dtype)
+
+    # padding = (left, right, top, bottom)
+    padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
+    img = torch_pad(img, padding, mode="reflect")
+    img = conv2d(img, kernel, groups=img.shape[-3])
+
+    img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
+    return img
+
 def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
     """Performs Gaussian blurring on the img by given kernel.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -143,12 +217,12 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
 
     t_img = img
     if not isinstance(img, torch.Tensor):
-        if not F_pil._is_pil_image(img):
+        if not _is_pil_image(img):
             raise TypeError('img should be PIL Image or Tensor. Got {}'.format(type(img)))
 
         t_img = to_tensor(img)
 
-    output = F_t.gaussian_blur(t_img, kernel_size, sigma)
+    output = _gaussian_blur(t_img, kernel_size, sigma)
 
     if not isinstance(img, torch.Tensor):
         output = to_pil_image(output)
@@ -157,5 +231,5 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
 
 
 
-if __name__ == "__main__":
-    gaussian_blur = GaussianBlur(kernel_size=23)
+# if __name__ == "__main__":
+#     gaussian_blur = GaussianBlur(kernel_size=23)
