@@ -1,6 +1,10 @@
 from torchvision import transforms
 from PIL import Image, ImageOps
-
+try:
+    from torchvision.transforms import GaussianBlur
+except ImportError:
+    from .gaussian_blur import GaussianBlur
+    torchvision.transforms.GaussianBlur = GaussianBlur
 
 imagenet_norm = [[0.485, 0.456, 0.406],[0.229, 0.224, 0.225]]
 
