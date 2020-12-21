@@ -23,12 +23,9 @@ python main.py \
                     --num_epochs int(30)
                     --optimizer str('sgd')" \
 --head_tail_accuracy \
---hide_progress \
 --output_dir outputs/cifar10_experiment/ \
 --data_dir ../Data/ \
-# --debug
-
-
+--hide_progress
 
 
 
