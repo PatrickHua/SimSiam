@@ -1,7 +1,6 @@
 # SimSiam
 A PyTorch implementation for the paper [**Exploring Simple Siamese Representation Learning**](https://arxiv.org/abs/2011.10566) by Xinlei Chen & Kaiming He
 
-This repo also provides pytorch implementations for simclr, byol and swav. I wrote the models using the exact set of configurations in their papers. You can open a pull request if mistakes are found.
 
 
 ### Dependencies
