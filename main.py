@@ -57,7 +57,8 @@ def main(device, args):
     model = get_model(args.model, args.backbone).to(device)
     if args.model == 'simsiam' and args.proj_layers is not None: model.projector.set_layers(args.proj_layers)
     model = torch.nn.DataParallel(model)
-    if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    # torch.distributed.init_process_group('gloo', init_method='file:///tmp/somefile', rank=0, world_size=1)
+    # if torch.cuda.device_count() > 1: model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     
     # define optimizer
     optimizer = get_optimizer(
@@ -88,6 +89,7 @@ def main(device, args):
 
             model.zero_grad()
             loss = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
+            loss = loss.mean() # for ddp
             loss.backward()
             optimizer.step()
             loss_meter.update(loss.item())
