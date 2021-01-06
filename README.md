@@ -42,7 +42,7 @@ Model saved to ./outputs/simsiam-cifar10-epoch1.pth
 I made an example training script for the cifar10 experiment in Appendix D.
 
 ```
-sh configs/cifar_experiment.sh
+CUDA_VISIBLE_DEVICES=0 sh configs/cifar_experiment.sh
 ```
 ```
 Training: 100%|#################################| 800/800 [3:27:50<00:00, 15.59s/it, epoch=799, loss_avg=-.895]
