@@ -14,7 +14,8 @@ class LR_Scheduler(object):
         
         self.lr_schedule = np.concatenate((warmup_lr_schedule, cosine_lr_schedule))
         self.optimizer = optimizer
-        self.iter = 0 
+        self.iter = 0
+        self.current_lr = 0
     def step(self):
         for param_group in self.optimizer.param_groups:
 
@@ -24,7 +25,10 @@ class LR_Scheduler(object):
                 lr = param_group['lr'] = self.lr_schedule[self.iter]
         
         self.iter += 1
+        self.current_lr = lr
         return lr
+    def get_lr(self):
+        return self.current_lr
 
 if __name__ == "__main__":
     import torchvision

@@ -101,7 +101,7 @@ class BYOL(nn.Module):
             z2_t = f_t(x2)
         
         L = D(p1_o, z2_t) / 2 + D(p2_o, z1_t) / 2 
-        return L
+        return {'loss': L}
 
     
 

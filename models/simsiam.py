@@ -105,7 +105,7 @@ class SimSiam(nn.Module):
         z1, z2 = f(x1), f(x2)
         p1, p2 = h(z1), h(z2)
         L = D(p1, z2) / 2 + D(p2, z1) / 2
-        return L
+        return {'loss': L}
 
 
 

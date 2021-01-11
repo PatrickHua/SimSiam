@@ -15,14 +15,14 @@ Then install the required packages:
 pip install -r requirements.txt
 ```
 
-### Run this command to test the environment
+### Run SimSiam
 
 ```
-python main.py --debug --dataset cifar10 --data_dir "/Your/data/folder/" --output_dir "/Your/output/folder/"
+CUDA_VISIBLE_DEVICES=0 python main.py --data_dir ../Data/ --log_dir ../logs/ -c configs/simsiam_cifar.yaml --ckpt_dir ~/.cache/ --hide_progress
 ```
-The data folder should look like this:
+The data folder `../Data/` should look like this:
 ```
-➜  ~ tree /Your/data/folder/
+➜  ~ tree ../Data/
 ├── cifar-10-batches-py
 │   ├── batches.meta
 │   ├── data_batch_1
@@ -31,60 +31,25 @@ The data folder should look like this:
     ├── ...
 ```
 ```
-python main.py --debug --dataset cifar10 --data_dir ~/Data --output_dir ./outputs/
-Epoch 0/1: 100%|████████████████████████████████████| 1/1 [00:03<00:00,  3.60s/it, loss=-.0196, loss_avg=-.0196]
-Training: 100%|███████████████████████████████████████████████████████████████████| 1/1 [00:03<00:00,  3.83s/it]
-Model saved to ./outputs/simsiam-cifar10-epoch1.pth
+Training: 100%|#################################################################| 800/800 [11:46:06<00:00, 52.96s/it, epoch=799, accuracy=90.3]
+Model saved to /root/.cache/simsiam-cifar10-experiment-resnet18_cifar_variant1.pth
+Evaluating: 100%|##########################################################################################################| 100/100 [08:29<00:00,  5.10s/it]
+Accuracy = 90.83
+Log file has been saved to ../logs/completed-simsiam-cifar10-experiment-resnet18_cifar_variant1(2)
 ```
->`export DATA="/path/to/your/datasets/"` and `export OUTPUT="/path/to/your/output/"` will save you the trouble of entering the folder name everytime!
+![simsiam-cifar10-800e](simsiam-800e90.83acc.svg)
 
-### Run SimSiam
-I made an example training script for the cifar10 experiment in Appendix D.
-
-```
-CUDA_VISIBLE_DEVICES=0 sh configs/cifar_experiment.sh
-```
-```
-Training: 100%|#################################| 800/800 [3:27:50<00:00, 15.59s/it, epoch=799, loss_avg=-.895]
-Model saved to outputs/cifar10_experiment/simsiam-cifar10-epoch800.pth
-Evaluating: 100%|###################################| 100/100 [08:24<00:00,  5.04s/it, epoch=99, accuracy=80.8]
-
-```
-
+>`export DATA="/path/to/your/datasets/"` and `export LOG="/path/to/your/log/"` will save you the trouble of entering the folder name every single time!
 
 ### Run SimCLR
 
 ```
-python main.py \
-    --model simclr \
-    --optimizer lars \
-    --data_dir /path/to/your/datasets/ \
-    --output_dir /path/to/your/output/ \
-    --backbone resnet50 \
-    --dataset imagenet \ 
-    --batch_size 4096 \ 
-    --num_epochs 800 \
-    --optimizer lars_simclr \
-    --weight_decay 1e-6 \
-    --base_lr 0.3 \
-    --warmup_epochs 10
+CUDA_VISIBLE_DEVICES=1 python main.py --data_dir ../Data/ --log_dir ../logs/ -c configs/simclr_cifar.yaml --ckpt_dir ~/.cache/ --hide_progress
 ```
 
 ### Run BYOL
 ```
-python main.py \
-    --model byol \
-    --optimizer lars \ 
-    --data_dir /path/to/your/datasets/ \
-    --output_dir /path/to/your/output/ \
-    --backbone resnet50 \
-    --dataset imagenet \ 
-    --batch_size 256 \ 
-    --num_epochs 100 \ 
-    --optimizer lars_simclr \ They use simclr version of lars
-    --weight_decay 1.5e-6 \
-    --base_lr 0.3 \
-    --warmup_epochs 10
+CUDA_VISIBLE_DEVICES=2 python main.py --data_dir ../Data/ --log_dir ../logs/ -c configs/byol_cifar.yaml --ckpt_dir ~/.cache/ --hide_progress
 ```
 
 ### TODO
