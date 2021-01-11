@@ -72,7 +72,7 @@ class BYOL(nn.Module):
 
         self.target_encoder = copy.deepcopy(self.online_encoder)
         self.online_predictor = MLP(HPS['projection_size'])
-
+        raise NotImplementedError('Please put update_moving_average to training')
 
     def target_ema(self, k, K, base_ema=HPS['base_target_ema']):
         # tau_base = 0.996 
