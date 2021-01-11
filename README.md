@@ -37,6 +37,14 @@ Evaluating: 100%|###############################################################
 Accuracy = 90.83
 Log file has been saved to ../logs/completed-simsiam-cifar10-experiment-resnet18_cifar_variant1(2)
 ```
+To evaluate separately:
+```
+CUDA_VISIBLE_DEVICES=4 python linear_eval.py --data_dir ../Data/ --log_dir ../logs/ -c configs/simsiam_cifar_eval.yaml --ckpt_dir ~/.cache/ --hide_progress --eval_from ~/simsiam-cifar10-experiment-resnet18_cifar_variant1.pth
+
+creating file ../logs/in-progress_0111061045_simsiam-cifar10-experiment-resnet18_cifar_variant1
+Evaluating: 100%|##########################################################################################################| 200/200 [16:52<00:00,  5.06s/it]
+Accuracy = 90.87
+```
 ![simsiam-cifar10-800e](simsiam-800e90.83acc.svg)
 
 >`export DATA="/path/to/your/datasets/"` and `export LOG="/path/to/your/log/"` will save you the trouble of entering the folder name every single time!

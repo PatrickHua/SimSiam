@@ -1,0 +1,37 @@
+name: simsiam-cifar10-experiment-resnet18_cifar_variant1
+dataset: 
+  name: cifar10
+  image_size: 32
+  num_workers: 4
+
+model: 
+  name: simsiam
+  backbone: resnet18_cifar_variant1
+  proj_layers: 2
+
+train: null
+
+eval: # linear evaluation, False will turn off automatic evaluation after training
+  optimizer: 
+    name: sgd
+    weight_decay: 0
+    momentum: 0.9
+  warmup_lr: 0
+  warmup_epochs: 0
+  base_lr: 30
+  final_lr: 0
+  batch_size: 256
+  num_epochs: 200
+
+logger:
+  tensorboard: False
+  matplotlib: False
+
+seed: null # None type for yaml file
+# two things might lead to stochastic behavior other than seed:
+# worker_init_fn from dataloader and torch.nn.functional.interpolate 
+# (keep this in mind if you want to achieve 100% deterministic)
+
+
+
+
