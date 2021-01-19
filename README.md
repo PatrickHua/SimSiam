@@ -1,3 +1,7 @@
+# News
+It's been two months and I think I've just discovered the **True** reasons why Simsiam avoids collapse solutions using stop gradient and predictor!!! Follow me on [twitter](https://twitter.com/tianyu_hua) and stay tuned!
+
+
 # SimSiam
 A PyTorch implementation for the paper [**Exploring Simple Siamese Representation Learning**](https://arxiv.org/abs/2011.10566) by Xinlei Chen & Kaiming He
 
