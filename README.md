@@ -1,5 +1,5 @@
 # News
-It's been two months and I think I've just discovered the **True** reasons why Simsiam avoids collapse solutions using stop gradient and predictor!!! Follow me on [twitter](https://twitter.com/tianyu_hua) and stay tuned!
+It's been two months and I think I've finally discovered the **True** reasons why Simsiam/BYOL avoids collapsed solutions using stop gradient and predictor!!! Follow me on [twitter](https://twitter.com/tianyu_hua) and stay tuned!
 
 
 # SimSiam
