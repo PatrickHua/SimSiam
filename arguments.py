@@ -53,6 +53,7 @@ def get_args():
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--eval_from', type=str, default=None)
     parser.add_argument('--hide_progress', action='store_true')
+    parser.add_argument('--class_awareness', action='store_true')
     args = parser.parse_args()
 
 

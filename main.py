@@ -17,6 +17,8 @@ import sys
 import wandb
 import pandas as pd
 
+WANDB = True
+
 def main(device, args):
 
     if args.dataset_kwargs['ordering'] == 'iid':
@@ -62,7 +64,8 @@ def main(device, args):
     model = get_model(args.model).to(device)
     model = torch.nn.DataParallel(model)
 
-    wandb.watch(model)
+    if WANDB:
+        wandb.watch(model)
 
     # define optimizer
     optimizer = get_optimizer(
@@ -99,23 +102,66 @@ def main(device, args):
             if len(images) == 2:
                 images1 = images[0]
                 images2 = images[1]
+
+                model.zero_grad()
+                data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
+                loss = data_dict['loss'].mean() # ddp
+                loss.backward()
+                optimizer.step()
+                lr_scheduler.step()
+                data_dict.update({'lr':lr_scheduler.get_lr()})
+                
+                local_progress.set_postfix(data_dict)
+                logger.update_scalers(data_dict)
+
+                batch_loss += loss.item()
+                batch_updates += 1
+
+            elif args.class_awareness:
+                loss = 0.
+                labels_set = {l.item() for l in labels}
+                for l in labels_set:
+                    images_l = images[labels == l]
+                    images1 = images_l[:-1]
+                    images2 = images_l[1:]
+
+
+                    data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
+                    loss += data_dict['loss'].mean() # ddp
+
+                loss /= len(labels_set)
+                model.zero_grad()
+                loss.backward()
+                optimizer.step()
+                lr_scheduler.step()
+                data_dict.update({'lr':lr_scheduler.get_lr()})
+
+                if len(labels_set) > 1:
+                    sys.exit()
+                
+                local_progress.set_postfix(data_dict)
+                logger.update_scalers(data_dict)
+
+                batch_loss += loss.item()
+                batch_updates += 1
+
             else:
                 images1 = images[:-1]
                 images2 = images[1:]
 
-            model.zero_grad()
-            data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
-            loss = data_dict['loss'].mean() # ddp
-            loss.backward()
-            optimizer.step()
-            lr_scheduler.step()
-            data_dict.update({'lr':lr_scheduler.get_lr()})
-            
-            local_progress.set_postfix(data_dict)
-            logger.update_scalers(data_dict)
+                model.zero_grad()
+                data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
+                loss = data_dict['loss'].mean() # ddp
+                loss.backward()
+                optimizer.step()
+                lr_scheduler.step()
+                data_dict.update({'lr':lr_scheduler.get_lr()})
+                
+                local_progress.set_postfix(data_dict)
+                logger.update_scalers(data_dict)
 
-            batch_loss += loss.item()
-            batch_updates += 1
+                batch_loss += loss.item()
+                batch_updates += 1
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0: 
             train_accuracy = knn_monitor(model.module.backbone, memory_loader, memory_loader, device, k=min(args.train.knn_k, len(memory_loader.dataset)), hide_progress=args.hide_progress) 
@@ -126,7 +172,8 @@ def main(device, args):
         print("train_accuracy:", epoch_dict["train_accuracy"])
         print("test_accuracy:", epoch_dict["test_accuracy"])
         print("batch_loss:", epoch_dict["batch_loss"])
-        wandb.log(epoch_dict)
+        if WANDB:
+            wandb.log(epoch_dict)
 
         global_progress.set_postfix(epoch_dict)
         logger.update_scalers(epoch_dict)
@@ -149,10 +196,11 @@ def main(device, args):
 if __name__ == "__main__":
     args = get_args()
 
-    wandb_config = pd.json_normalize(vars(args), sep='_')
-    wandb_config = wandb_config.to_dict(orient='records')[0]
+    if WANDB:
+        wandb_config = pd.json_normalize(vars(args), sep='_')
+        wandb_config = wandb_config.to_dict(orient='records')[0]
+        wandb.init(project='simsiam', config=wandb_config)
 
-    wandb.init(project='simsiam', config=wandb_config)
     print("Using device", args.device)
     assert(args.device == 'cuda')
 

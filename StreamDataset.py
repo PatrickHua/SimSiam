@@ -114,6 +114,7 @@ class StreamDataset(data.Dataset):
         else:
             data_list = json.load(open(os.path.join(root,'Stream-51_test.json')))
             data_list = [x for x in data_list if x[0] != 51]
+        # data_list = data_list[:5120]
 
         samples = make_dataset(data_list, ordering, seed=seed)
 
@@ -133,7 +134,8 @@ class StreamDataset(data.Dataset):
         self.loaded_images = {}
         print("LOADING DATASET")
         for index in trange(len(self.samples)):
-            self.loaded_images[index] = self.get_item(index)
+            sample, target = self.get_item(index)
+            self.loaded_images[index] = (sample, target)
 
 
     def __getitem__(self, index):
