@@ -3,7 +3,7 @@ dataset:
   name: stream51
   image_size: 32
   num_workers: 1
-  ordering: 'iid'
+  ordering: 'instance'
 
 model: 
   name: simsiam
