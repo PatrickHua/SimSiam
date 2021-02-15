@@ -6,3 +6,6 @@ tmp/
 .vscode/
 data/
 Data/
+tags
+slurm-*
+wandb/

@@ -1,6 +1,7 @@
 import argparse
 import os
 import torch
+import sys
 
 import numpy as np
 import torch
@@ -42,7 +43,7 @@ def set_deterministic(seed):
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config-file', required=True, type=str, help="xxx.yaml")
+    parser.add_argument('--config_file', required=False, type=str, help="xxx.yaml")
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--debug_subset_size', type=int, default=8)
     parser.add_argument('--download', action='store_true', help="if can't find dataset, download from web")
@@ -91,6 +92,7 @@ def get_args():
         'data_dir': args.data_dir,
         'download':args.download,
         'debug_subset_size': args.debug_subset_size if args.debug else None,
+        'ordering': args.dataset.ordering,
     }
     vars(args)['dataloader_kwargs'] = {
         'drop_last': True,
