@@ -122,6 +122,8 @@ def main(device, args):
                 labels_set = {l.item() for l in labels}
                 for l in labels_set:
                     images_l = images[labels == l]
+                    if len(images_l) < 2:
+                        continue
                     images1 = images_l[:-1]
                     images2 = images_l[1:]
 
@@ -135,9 +137,6 @@ def main(device, args):
                 optimizer.step()
                 lr_scheduler.step()
                 data_dict.update({'lr':lr_scheduler.get_lr()})
-
-                if len(labels_set) > 1:
-                    sys.exit()
                 
                 local_progress.set_postfix(data_dict)
                 logger.update_scalers(data_dict)
