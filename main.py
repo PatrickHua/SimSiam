@@ -31,10 +31,20 @@ def main(device, args):
             batch_size=args.train.batch_size,
             **args.dataloader_kwargs
         )
+    elif args.no_augmentation:
+        train_loader = torch.utils.data.DataLoader(
+            dataset=get_dataset(
+                transform=get_aug(train=False, train_classifier=True, **args.aug_kwargs), 
+                train=True,
+                **args.dataset_kwargs),
+            shuffle=True,
+            batch_size=args.train.batch_size,
+            **args.dataloader_kwargs
+        )
     else:
         train_loader = torch.utils.data.DataLoader(
             dataset=get_dataset(
-                transform=get_aug(train=False, train_classifier=False, **args.aug_kwargs), 
+                transform=get_aug(train=False, train_classifier=True, **args.aug_kwargs), 
                 train=True,
                 **args.dataset_kwargs),
             shuffle=False,
@@ -122,16 +132,15 @@ def main(device, args):
                 labels_set = {l.item() for l in labels}
                 for l in labels_set:
                     images_l = images[labels == l]
-                    if len(images_l) < 2:
+                    if len(images_l) < 3:
                         continue
                     images1 = images_l[:-1]
                     images2 = images_l[1:]
 
 
                     data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
-                    loss += data_dict['loss'].mean() # ddp
+                    loss += (float(len(images_l)) / float(len(images))) * data_dict['loss'].mean() # ddp
 
-                loss /= len(labels_set)
                 model.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -163,14 +172,10 @@ def main(device, args):
                 batch_updates += 1
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0: 
-            train_accuracy = knn_monitor(model.module.backbone, memory_loader, memory_loader, device, k=min(args.train.knn_k, len(memory_loader.dataset)), hide_progress=args.hide_progress) 
-            test_accuracy = knn_monitor(model.module.backbone, memory_loader, test_loader, device, k=min(args.train.knn_k, len(memory_loader.dataset)), hide_progress=args.hide_progress) 
+            train_accuracy, train_features = knn_monitor(model.module.backbone, memory_loader, memory_loader, device, k=min(args.train.knn_k, len(memory_loader.dataset)), hide_progress=args.hide_progress) 
+            test_accuracy, test_features = knn_monitor(model.module.backbone, memory_loader, test_loader, device, k=min(args.train.knn_k, len(memory_loader.dataset)), hide_progress=args.hide_progress) 
         
-        epoch_dict = {"train_accuracy": train_accuracy, "test_accuracy": test_accuracy, "batch_loss": batch_loss / batch_updates}
-        print("step:", epoch)
-        print("train_accuracy:", epoch_dict["train_accuracy"])
-        print("test_accuracy:", epoch_dict["test_accuracy"])
-        print("batch_loss:", epoch_dict["batch_loss"])
+        epoch_dict = {"train_accuracy": train_accuracy, "test_accuracy": test_accuracy, "batch_loss": batch_loss / batch_updates, "train_feature_std": torch.std(train_features, dim=0).mean().item() "test_feature_std": torch.std(test_features, dim=0).mean().item()}
         if WANDB:
             wandb.log(epoch_dict)
 

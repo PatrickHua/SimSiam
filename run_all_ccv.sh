@@ -16,6 +16,6 @@
 #SBATCH --array=1-4
 
 ID=$(($SLURM_ARRAY_TASK_ID - 1))
-exp_type='instance_overlapping'
+exp_type='iid_variance'
 
 source ~/miniconda3/bin/activate && conda activate simsiam && WANDB_RUN_GROUP=${exp_type} python3 main.py --config_file="configs/simsiam_stream51.yaml" --data_dir="../stream_data/" --log_dir="../logs/contrastive-logs-${exp_type}-${ID}/" --ckpt_dir=".cache/"

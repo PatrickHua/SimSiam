@@ -18,18 +18,22 @@ def knn_monitor(net, memory_data_loader, test_data_loader, epoch, k=200, t=0.1, 
         # [N]
         feature_labels = torch.tensor(memory_data_loader.dataset.targets, device=feature_bank.device)
         # loop test data to predict the label by weighted knn search
+        test_feature_bank = []
         test_bar = tqdm(test_data_loader, desc='kNN', disable=hide_progress)
         for data, target in test_bar:
             data, target = data.cuda(non_blocking=True), target.cuda(non_blocking=True)
             feature = net(data)
             feature = F.normalize(feature, dim=1)
+            test_feature_bank.append(feature)
             
             pred_labels = knn_predict(feature, feature_bank, feature_labels, classes, k, t)
 
             total_num += data.size(0)
             total_top1 += (pred_labels[:, 0] == target).float().sum().item()
             test_bar.set_postfix({'Accuracy':total_top1 / total_num * 100})
-    return total_top1 / total_num * 100
+        # [N, D]
+        test_feature_bank = torch.cat(test_feature_bank, dim=0).contiguous()
+    return total_top1 / total_num * 100, test_feature_bank
 
 # knn monitor as in InstDisc https://arxiv.org/abs/1805.01978
 # implementation follows http://github.com/zhirongw/lemniscate.pytorch and https://github.com/leftthomas/SimCLR
