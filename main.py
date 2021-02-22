@@ -17,8 +17,6 @@ import sys
 import wandb
 import pandas as pd
 
-WANDB = True
-
 def main(device, args):
 
     if args.dataset_kwargs['ordering'] == 'iid' and not args.no_augmentation:
@@ -76,7 +74,7 @@ def main(device, args):
     model = get_model(args.model).to(device)
     model = torch.nn.DataParallel(model)
 
-    if WANDB:
+    if args.wandb:
         wandb.watch(model)
 
     # define optimizer
@@ -181,7 +179,7 @@ def main(device, args):
             test_accuracy, test_features = knn_monitor(model.module.backbone, memory_loader, test_loader, device, k=min(args.train.knn_k, len(memory_loader.dataset)), hide_progress=args.hide_progress) 
         
         epoch_dict = {"train_accuracy": train_accuracy, "test_accuracy": test_accuracy, "batch_loss": batch_loss / batch_updates, "train_feature_std": torch.std(train_features, dim=0).mean().item(), "test_feature_std": torch.std(test_features, dim=0).mean().item()}
-        if WANDB:
+        if args.wandb:
             wandb.log(epoch_dict)
 
         global_progress.set_postfix(epoch_dict)
@@ -205,7 +203,7 @@ def main(device, args):
 if __name__ == "__main__":
     args = get_args()
 
-    if WANDB:
+    if args.wandb:
         wandb_config = pd.json_normalize(vars(args), sep='_')
         wandb_config = wandb_config.to_dict(orient='records')[0]
         wandb.init(project='simsiam', config=wandb_config)

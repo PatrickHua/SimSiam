@@ -55,6 +55,8 @@ def get_args():
     parser.add_argument('--hide_progress', action='store_true')
     parser.add_argument('--class_awareness', action='store_true')
     parser.add_argument('--no_augmentation', action='store_true')
+    parser.add_argument('--wandb', action='store_true')
+    parser.add_argument('--dataset_ordering', type=str, default="iid")
     parser.add_argument('--n_offset', type=int, default=1)
     args = parser.parse_args()
 
@@ -90,12 +92,13 @@ def get_args():
         'name':args.model.name,
         'image_size': args.dataset.image_size
     }
+    assert args.dataset_ordering in ['iid', 'instance']
     vars(args)['dataset_kwargs'] = {
         'dataset':args.dataset.name,
         'data_dir': args.data_dir,
         'download':args.download,
         'debug_subset_size': args.debug_subset_size if args.debug else None,
-        'ordering': args.dataset.ordering,
+        'ordering': args.dataset_ordering,
     }
     vars(args)['dataloader_kwargs'] = {
         'drop_last': True,
