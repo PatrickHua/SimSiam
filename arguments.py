@@ -55,6 +55,7 @@ def get_args():
     parser.add_argument('--hide_progress', action='store_true')
     parser.add_argument('--class_awareness', action='store_true')
     parser.add_argument('--no_augmentation', action='store_true')
+    parser.add_argument('--wandb', action='store_true')
     parser.add_argument('--n_offset', type=int, default=1)
     args = parser.parse_args()
 
