@@ -1,4 +1,5 @@
 import os
+import shutil
 import torch
 import torch.nn as nn
 import torch.nn.functional as F 
@@ -16,6 +17,27 @@ from datetime import datetime
 import sys
 import wandb
 import pandas as pd
+import cv2
+
+def save_images(imgs, labels, name):
+    print("WRITING SAMPLE IMAGES")
+    path_name = os.path.join("..", "images_" + name)
+    if os.path.exists(path_name):
+        shutil.rmtree(path_name)
+    os.makedirs(path_name)
+    for i_save in range(100):
+        sample = imgs[i_save].numpy()
+
+        # Convert to 0-1, (W, H, C)
+        sample -= sample.min()
+        sample /= sample.max()
+        sample = (sample.transpose((1, 2, 0)) * 255)
+        sample = cv2.resize(sample, (256, 256), interpolation = cv2.INTER_CUBIC)
+
+        # Save image
+        write_path = os.path.join(path_name, "label_" + str(labels[i_save].item()) + "_" + str(i_save) + ".png")
+        cv2.imwrite(write_path, sample)
+    
 
 def main(device, args):
 
@@ -114,6 +136,10 @@ def main(device, args):
                 images1 = images[0]
                 images2 = images[1]
 
+                if args.save_sample:
+                    save_images(images_2, labels, "iid")
+                    return
+
                 model.zero_grad()
                 data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
                 loss = data_dict['loss'].mean() # ddp
@@ -142,6 +168,9 @@ def main(device, args):
 
                     data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
                     loss += (float(len(images_l)) / float(len(images))) * data_dict['loss'].mean() # ddp
+                if args.save_sample:
+                    save_images(images, labels, "instance_classaware")
+                    return
 
                 model.zero_grad()
                 loss.backward()
@@ -159,6 +188,10 @@ def main(device, args):
                 print("NO CLASs AWARENESS", flush=True)
                 images1 = torch.roll(images, args.n_offset)
                 images2 = images
+
+                if args.save_sample:
+                    save_images(images_2, labels, "instance")
+                    return
 
                 model.zero_grad()
                 data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))

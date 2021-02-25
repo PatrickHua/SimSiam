@@ -107,7 +107,7 @@ class StreamDataset(data.Dataset):
     """
 
     def __init__(self, root, train=True, ordering=None, transform=None, target_transform=None, bbox_crop=True,
-                 ratio=1.10, seed=10):
+                 ratio=1.10, seed=10, small_dataset=False):
 
         if train:
             data_list = json.load(open(os.path.join(root,'Stream-51_train.json')))
@@ -117,6 +117,8 @@ class StreamDataset(data.Dataset):
         # data_list = data_list[:5120]
 
         samples = make_dataset(data_list, ordering, seed=seed)
+        if small_dataset:
+            samples = samples[:1000]
 
         self.root = root
         self.loader = default_loader
