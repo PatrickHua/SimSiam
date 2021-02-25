@@ -18,25 +18,28 @@ import sys
 import wandb
 import pandas as pd
 import cv2
+import imageio
 
-def save_images(imgs, labels, name):
+def save_images(imgs, labels, name, fps=2):
     print("WRITING SAMPLE IMAGES")
     path_name = os.path.join("..", "images_" + name)
     if os.path.exists(path_name):
         shutil.rmtree(path_name)
     os.makedirs(path_name)
-    for i_save in range(100):
+    assert len(imgs) == len(labels)
+    images = []
+    for i_save in range(len(imgs)):
         sample = imgs[i_save].numpy()
 
         # Convert to 0-1, (W, H, C)
         sample -= sample.min()
         sample /= sample.max()
         sample = (sample.transpose((1, 2, 0)) * 255)
-        sample = cv2.resize(sample, (256, 256), interpolation = cv2.INTER_CUBIC)
+        sample = cv2.resize(sample, (8 * sample.shape[1], 8 * sample.shape[0]), interpolation = cv2.INTER_CUBIC)
 
         # Save image
-        write_path = os.path.join(path_name, "label_" + str(labels[i_save].item()) + "_" + str(i_save) + ".png")
-        cv2.imwrite(write_path, sample)
+        images.append(sample)
+    imageio.mimwrite(os.path.join(path_name, "movie.gif"), images, fps=fps)
     
 
 def main(device, args):
@@ -137,7 +140,7 @@ def main(device, args):
                 images2 = images[1]
 
                 if args.save_sample:
-                    save_images(images_2, labels, "iid")
+                    save_images(torch.cat((images1, images2), 3), labels, "iid")
                     return
 
                 model.zero_grad()
@@ -190,7 +193,7 @@ def main(device, args):
                 images2 = images
 
                 if args.save_sample:
-                    save_images(images_2, labels, "instance")
+                    save_images(images2, labels, "instance")
                     return
 
                 model.zero_grad()
