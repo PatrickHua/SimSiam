@@ -69,7 +69,6 @@ def main(device, args):
         train_loader = torch.utils.data.DataLoader(
             dataset=get_dataset(
                 transform=get_aug(train=False, train_classifier=True, **args.aug_kwargs), 
-                # transform=get_aug(train=True, **args.aug_kwargs), 
                 train=True,
                 **args.dataset_kwargs),
             shuffle=False,
@@ -172,7 +171,7 @@ def main(device, args):
                     data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
                     loss += (float(len(images_l)) / float(len(images))) * data_dict['loss'].mean() # ddp
                 if args.save_sample:
-                    save_images(images, labels, "instance_classaware")
+                    save_images(images, labels, "instance_classaware", fps=5)
                     return
 
                 model.zero_grad()
