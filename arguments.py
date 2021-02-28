@@ -60,6 +60,7 @@ def get_args():
     parser.add_argument('--n_offset', type=int, default=1)
     parser.add_argument('--save_sample', action='store_true')
     parser.add_argument('--small_dataset', action='store_true')
+    parser.add_argument('--linear_monitor', action='store_true', default=True)
     args = parser.parse_args()
 
 

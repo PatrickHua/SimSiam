@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F 
@@ -11,38 +12,43 @@ from tools import AverageMeter
 from datasets import get_dataset
 from optimizers import get_optimizer, LR_Scheduler
 
-def main(args):
+def main(args, train_loader=None, test_loader=None, model=None):
 
-    train_loader = torch.utils.data.DataLoader(
-        dataset=get_dataset( 
-            transform=get_aug(train=False, train_classifier=True, **args.aug_kwargs), 
-            train=True, 
-            **args.dataset_kwargs
-        ),
-        batch_size=args.eval.batch_size,
-        shuffle=True,
-        **args.dataloader_kwargs
-    )
-    test_loader = torch.utils.data.DataLoader(
-        dataset=get_dataset(
-            transform=get_aug(train=False, train_classifier=False, **args.aug_kwargs), 
-            train=False,
-            **args.dataset_kwargs
-        ),
-        batch_size=args.eval.batch_size,
-        shuffle=False,
-        **args.dataloader_kwargs
-    )
+    if train_loader is None:
+        train_loader = torch.utils.data.DataLoader(
+            dataset=get_dataset( 
+                transform=get_aug(train=False, train_classifier=True, **args.aug_kwargs), 
+                train=True, 
+                **args.dataset_kwargs
+            ),
+            batch_size=args.eval.batch_size,
+            shuffle=True,
+            **args.dataloader_kwargs
+        )
+    if test_loader is None:
+        test_loader = torch.utils.data.DataLoader(
+            dataset=get_dataset(
+                transform=get_aug(train=False, train_classifier=False, **args.aug_kwargs), 
+                train=False,
+                **args.dataset_kwargs
+            ),
+            batch_size=args.eval.batch_size,
+            shuffle=False,
+            **args.dataloader_kwargs
+        )
 
 
-    model = get_backbone(args.model.backbone)
-    classifier = nn.Linear(in_features=model.output_dim, out_features=10, bias=True).to(args.device)
+    if model is None:
+        model = get_backbone(args.model.backbone)
+        assert args.eval_from is not None
+        save_dict = torch.load(args.eval_from, map_location='cpu')
+        msg = model.load_state_dict({k[9:]:v for k, v in save_dict['state_dict'].items() if k.startswith('backbone.')}, strict=True)
+        
+        # print(msg)
+    else:
+        model = deepcopy(model)
+    classifier = nn.Linear(in_features=model.output_dim, out_features=args.eval.num_classes, bias=True).to(args.device)
 
-    assert args.eval_from is not None
-    save_dict = torch.load(args.eval_from, map_location='cpu')
-    msg = model.load_state_dict({k[9:]:v for k, v in save_dict['state_dict'].items() if k.startswith('backbone.')}, strict=True)
-    
-    # print(msg)
     model = model.to(args.device)
     model = torch.nn.DataParallel(model)
 
@@ -93,32 +99,36 @@ def main(args):
     classifier.eval()
     correct, total = 0, 0
     acc_meter.reset()
-    for idx, (images, labels) in enumerate(test_loader):
+    train_features = []
+    for idx, (images, labels) in enumerate(train_loader):
         with torch.no_grad():
             feature = model(images.to(args.device))
+            train_features.append(feature)
             preds = classifier(feature).argmax(dim=1)
             correct = (preds == labels.to(args.device)).sum().item()
             acc_meter.update(correct/preds.shape[0])
-    print(f'Accuracy = {acc_meter.avg*100:.2f}')
+    train_accuracy = acc_meter.avg
+    train_features = torch.cat(train_features, dim=0)
+
+    correct, total = 0, 0
+    acc_meter.reset()
+    test_features = []
+    for idx, (images, labels) in enumerate(test_loader):
+        with torch.no_grad():
+            feature = model(images.to(args.device))
+            test_features.append(feature)
+            preds = classifier(feature).argmax(dim=1)
+            correct = (preds == labels.to(args.device)).sum().item()
+            acc_meter.update(correct/preds.shape[0])
+    test_accuracy = acc_meter.avg
+    test_features = torch.cat(test_features, dim=0)
+    print(f'Test Accuracy = {acc_meter.avg*100:.2f}')
+
+    return train_accuracy, test_accuracy, train_features, test_features
 
 
 
 
 if __name__ == "__main__":
     main(args=get_args())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
