@@ -50,7 +50,7 @@ def main(device, args):
                 transform=get_aug(train=True, **args.aug_kwargs), 
                 train=True,
                 **args.dataset_kwargs),
-            shuffle=False,
+            shuffle=True,
             batch_size=args.train.batch_size,
             **args.dataloader_kwargs
         )
