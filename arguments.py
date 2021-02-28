@@ -58,6 +58,8 @@ def get_args():
     parser.add_argument('--wandb', action='store_true')
     parser.add_argument('--dataset_ordering', type=str, default="iid")
     parser.add_argument('--n_offset', type=int, default=1)
+    parser.add_argument('--save_sample', action='store_true')
+    parser.add_argument('--small_dataset', action='store_true')
     args = parser.parse_args()
 
 
@@ -99,6 +101,7 @@ def get_args():
         'download':args.download,
         'debug_subset_size': args.debug_subset_size if args.debug else None,
         'ordering': args.dataset_ordering,
+        'small_dataset': args.small_dataset
     }
     vars(args)['dataloader_kwargs'] = {
         'drop_last': True,

@@ -1,4 +1,5 @@
 import os
+import shutil
 import torch
 import torch.nn as nn
 import torch.nn.functional as F 
@@ -16,6 +17,30 @@ from datetime import datetime
 import sys
 import wandb
 import pandas as pd
+import cv2
+import imageio
+
+def save_images(imgs, labels, name, fps=2):
+    print("WRITING SAMPLE IMAGES")
+    path_name = os.path.join("..", "images_" + name)
+    if os.path.exists(path_name):
+        shutil.rmtree(path_name)
+    os.makedirs(path_name)
+    assert len(imgs) == len(labels)
+    images = []
+    for i_save in range(len(imgs)):
+        sample = imgs[i_save].numpy()
+
+        # Convert to 0-1, (W, H, C)
+        sample -= sample.min()
+        sample /= sample.max()
+        sample = (sample.transpose((1, 2, 0)) * 255)
+        sample = cv2.resize(sample, (8 * sample.shape[1], 8 * sample.shape[0]), interpolation = cv2.INTER_CUBIC)
+
+        # Save image
+        images.append(sample)
+    imageio.mimwrite(os.path.join(path_name, "movie.gif"), images, fps=fps)
+    
 
 def main(device, args):
 
@@ -44,7 +69,6 @@ def main(device, args):
         train_loader = torch.utils.data.DataLoader(
             dataset=get_dataset(
                 transform=get_aug(train=False, train_classifier=True, **args.aug_kwargs), 
-                # transform=get_aug(train=True, **args.aug_kwargs), 
                 train=True,
                 **args.dataset_kwargs),
             shuffle=False,
@@ -114,6 +138,10 @@ def main(device, args):
                 images1 = images[0]
                 images2 = images[1]
 
+                if args.save_sample:
+                    save_images(torch.cat((images1, images2), 3), labels, "iid")
+                    return
+
                 model.zero_grad()
                 data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
                 loss = data_dict['loss'].mean() # ddp
@@ -142,6 +170,9 @@ def main(device, args):
 
                     data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
                     loss += (float(len(images_l)) / float(len(images))) * data_dict['loss'].mean() # ddp
+                if args.save_sample:
+                    save_images(images, labels, "instance_classaware", fps=5)
+                    return
 
                 model.zero_grad()
                 loss.backward()
@@ -159,6 +190,10 @@ def main(device, args):
                 print("NO CLASs AWARENESS", flush=True)
                 images1 = torch.roll(images, args.n_offset)
                 images2 = images
+
+                if args.save_sample:
+                    save_images(images2, labels, "instance")
+                    return
 
                 model.zero_grad()
                 data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
