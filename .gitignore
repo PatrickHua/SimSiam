@@ -9,3 +9,4 @@ Data/
 tags
 slurm-*
 wandb/
+.cache/
