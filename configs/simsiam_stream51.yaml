@@ -23,7 +23,7 @@ train:
   stop_at_epoch: 100 # has to be smaller than num_epochs
   batch_size: 512
   knn_monitor: False # knn monitor will take more time
-  knn_interval: 1
+  knn_interval: 10
   knn_k: 200
 eval: # linear evaluation, False will turn off automatic evaluation after training
   optimizer: 
