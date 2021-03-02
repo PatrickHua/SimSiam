@@ -107,7 +107,7 @@ def main(args, train_loader=None, test_loader=None, model=None):
             preds = classifier(feature).argmax(dim=1)
             correct = (preds == labels.to(args.device)).sum().item()
             acc_meter.update(correct/preds.shape[0])
-    train_accuracy = acc_meter.avg
+    train_accuracy = acc_meter.avg * 100.
     train_features = torch.cat(train_features, dim=0)
 
     correct, total = 0, 0
@@ -120,7 +120,7 @@ def main(args, train_loader=None, test_loader=None, model=None):
             preds = classifier(feature).argmax(dim=1)
             correct = (preds == labels.to(args.device)).sum().item()
             acc_meter.update(correct/preds.shape[0])
-    test_accuracy = acc_meter.avg
+    test_accuracy = acc_meter.avg * 100.
     test_features = torch.cat(test_features, dim=0)
     print(f'Test Accuracy = {acc_meter.avg*100:.2f}')
 
