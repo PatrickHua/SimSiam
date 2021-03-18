@@ -4,7 +4,7 @@ from .random_dataset import RandomDataset
 from StreamDataset import StreamDataset
 
 
-def get_dataset(dataset, data_dir, transform, train=True, download=False, debug_subset_size=None, ordering='iid', small_dataset=False):
+def get_dataset(dataset, data_dir, transform, train=True, download=False, debug_subset_size=None, ordering='iid', small_dataset=False, temporal_jitter_range=0, preload=False):
     if dataset == 'mnist':
         dataset = torchvision.datasets.MNIST(data_dir, train=train, transform=transform, download=download)
     elif dataset == 'stl10':
@@ -18,8 +18,7 @@ def get_dataset(dataset, data_dir, transform, train=True, download=False, debug_
     elif dataset == 'random':
         dataset = RandomDataset()
     elif dataset == 'stream51':
-        dataset = StreamDataset(data_dir, train=train, ordering=ordering, transform=transform, small_dataset=small_dataset)
-        dataset.classes = ["class_{:d}".format(i) for i in range(51)]
+        dataset = StreamDataset(data_dir, train=train, ordering=ordering, transform=transform, small_dataset=small_dataset, temporal_jitter_range=temporal_jitter_range, preload=preload)
     else:
         raise NotImplementedError
 

@@ -53,14 +53,13 @@ def get_args():
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--eval_from', type=str, default=None)
     parser.add_argument('--hide_progress', action='store_true')
-    parser.add_argument('--class_awareness', action='store_true')
     parser.add_argument('--no_augmentation', action='store_true')
     parser.add_argument('--wandb', action='store_true')
-    parser.add_argument('--dataset_ordering', type=str, default="iid")
-    parser.add_argument('--n_offset', type=int, default=1)
+    parser.add_argument('--temporal_jitter_range', type=int, default=0)
     parser.add_argument('--save_sample', action='store_true')
     parser.add_argument('--small_dataset', action='store_true')
     parser.add_argument('--linear_monitor', action='store_true', default=True)
+    parser.add_argument('--preload_dataset', action='store_true')
     args = parser.parse_args()
 
 
@@ -95,14 +94,14 @@ def get_args():
         'name':args.model.name,
         'image_size': args.dataset.image_size
     }
-    assert args.dataset_ordering in ['iid', 'instance']
     vars(args)['dataset_kwargs'] = {
         'dataset':args.dataset.name,
         'data_dir': args.data_dir,
         'download':args.download,
         'debug_subset_size': args.debug_subset_size if args.debug else None,
-        'ordering': args.dataset_ordering,
-        'small_dataset': args.small_dataset
+        'small_dataset': args.small_dataset,
+        'temporal_jitter_range': args.temporal_jitter_range,
+        'preload': args.preload_dataset
     }
     vars(args)['dataloader_kwargs'] = {
         'drop_last': True,

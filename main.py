@@ -44,17 +44,7 @@ def save_images(imgs, labels, name, fps=2):
 
 def main(device, args):
 
-    if args.dataset_kwargs['ordering'] == 'iid' and not args.no_augmentation:
-        train_loader = torch.utils.data.DataLoader(
-            dataset=get_dataset(
-                transform=get_aug(train=True, **args.aug_kwargs), 
-                train=True,
-                **args.dataset_kwargs),
-            shuffle=True,
-            batch_size=args.train.batch_size,
-            **args.dataloader_kwargs
-        )
-    elif args.dataset_kwargs['ordering'] == 'iid' and args.no_augmentation:
+    if args.no_augmentation:
         print("NO AUGMENTATION IID", flush=True)
         train_loader = torch.utils.data.DataLoader(
             dataset=get_dataset(
@@ -68,13 +58,14 @@ def main(device, args):
     else:
         train_loader = torch.utils.data.DataLoader(
             dataset=get_dataset(
-                transform=get_aug(train=False, train_classifier=True, **args.aug_kwargs), 
+                transform=get_aug(train=True, **args.aug_kwargs), 
                 train=True,
                 **args.dataset_kwargs),
-            shuffle=False,
+            shuffle=True,
             batch_size=args.train.batch_size,
             **args.dataloader_kwargs
         )
+
     memory_loader = torch.utils.data.DataLoader(
         dataset=get_dataset(
             transform=get_aug(train=False, train_classifier=False, **args.aug_kwargs), 
@@ -84,6 +75,7 @@ def main(device, args):
         batch_size=args.train.batch_size,
         **args.dataloader_kwargs
     )
+
     test_loader = torch.utils.data.DataLoader(
         dataset=get_dataset( 
             transform=get_aug(train=False, train_classifier=False, **args.aug_kwargs), 
@@ -137,82 +129,25 @@ def main(device, args):
         batch_updates = 0
 
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{args.train.num_epochs}', disable=args.hide_progress)
-        for idx, (images, labels) in enumerate(local_progress):
-            if len(images) == 2:
-                print("IID", flush=True)
-                images1 = images[0]
-                images2 = images[1]
+        for idx, (images1, images2, labels) in enumerate(local_progress):
+            if args.save_sample:
+                save_images(torch.cat((images1, images2), 3), labels, "iid")
+                return
 
-                if args.save_sample:
-                    save_images(torch.cat((images1, images2), 3), labels, "iid")
-                    return
+            model.zero_grad()
+            data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
+            loss = data_dict['loss'].mean() # ddp
+            data_dict['loss'] = loss
+            loss.backward()
+            optimizer.step()
+            lr_scheduler.step()
+            data_dict.update({'lr':lr_scheduler.get_lr()})
+            
+            local_progress.set_postfix(data_dict)
+            logger.update_scalers(data_dict)
 
-                model.zero_grad()
-                data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
-                loss = data_dict['loss'].mean() # ddp
-                loss.backward()
-                optimizer.step()
-                lr_scheduler.step()
-                data_dict.update({'lr':lr_scheduler.get_lr()})
-                
-                local_progress.set_postfix(data_dict)
-                logger.update_scalers(data_dict)
-
-                batch_loss += loss.item()
-                batch_updates += 1
-
-            elif args.class_awareness:
-                print("N OFFSET IS", args.n_offset, flush=True)
-                loss = 0.
-                labels_set = {l.item() for l in labels}
-                for l in labels_set:
-                    images_l = images[labels == l]
-                    if len(images_l) < args.n_offset + 1:
-                        continue
-                    images1 = torch.roll(images_l, args.n_offset)
-                    images2 = images_l
-
-
-                    data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
-                    loss += (float(len(images_l)) / float(len(images))) * data_dict['loss'].mean() # ddp
-                if args.save_sample:
-                    save_images(images, labels, "instance_classaware", fps=5)
-                    return
-
-                model.zero_grad()
-                loss.backward()
-                optimizer.step()
-                lr_scheduler.step()
-                data_dict.update({'lr':lr_scheduler.get_lr()})
-                
-                local_progress.set_postfix(data_dict)
-                logger.update_scalers(data_dict)
-
-                batch_loss += loss.item()
-                batch_updates += 1
-
-            else:
-                print("NO CLASs AWARENESS", flush=True)
-                images1 = torch.roll(images, args.n_offset)
-                images2 = images
-
-                if args.save_sample:
-                    save_images(images2, labels, "instance")
-                    return
-
-                model.zero_grad()
-                data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
-                loss = data_dict['loss'].mean() # ddp
-                loss.backward()
-                optimizer.step()
-                lr_scheduler.step()
-                data_dict.update({'lr':lr_scheduler.get_lr()})
-                
-                local_progress.set_postfix(data_dict)
-                logger.update_scalers(data_dict)
-
-                batch_loss += loss.item()
-                batch_updates += 1
+            batch_loss += loss.item()
+            batch_updates += 1
 
         assert args.train.knn_monitor or args.linear_monitor
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0: 
@@ -238,9 +173,9 @@ def main(device, args):
     with open(os.path.join(args.log_dir, f"checkpoint_path.txt"), 'w+') as f:
         f.write(f'{model_path}')
 
-    if args.eval is not False:
-        args.eval_from = model_path
-        final_test_accuracy = linear_eval(args)
+    # if args.eval is not False:
+    #     args.eval_from = model_path
+    #     final_test_accuracy = linear_eval(args)
 
 
 if __name__ == "__main__":

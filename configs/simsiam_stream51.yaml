@@ -2,7 +2,7 @@ name: simsiam-stream51-experiment-resnet18_cifar_variant1
 dataset: 
   name: stream51
   image_size: 32
-  num_workers: 1
+  num_workers: 9
   ordering: 'iid'
 
 model: 

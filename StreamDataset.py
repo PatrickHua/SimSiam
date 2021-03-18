@@ -107,14 +107,16 @@ class StreamDataset(data.Dataset):
     """
 
     def __init__(self, root, train=True, ordering=None, transform=None, target_transform=None, bbox_crop=True,
-                 ratio=1.10, seed=10, small_dataset=False):
+                 ratio=1.10, seed=10, small_dataset=False, temporal_jitter_range=0, preload=False):
 
-        if train:
+        self.train = train
+        self.preload = preload
+
+        if self.train:
             data_list = json.load(open(os.path.join(root,'Stream-51_train.json')))
         else:
             data_list = json.load(open(os.path.join(root,'Stream-51_test.json')))
             data_list = [x for x in data_list if x[0] != 51]
-        # data_list = data_list[:5120]
 
         samples = make_dataset(data_list, ordering, seed=seed)
         if small_dataset:
@@ -133,15 +135,45 @@ class StreamDataset(data.Dataset):
         self.bbox_crop = bbox_crop
         self.ratio = ratio
 
-        self.loaded_images = {}
-        print("LOADING DATASET")
-        for index in trange(len(self.samples)):
-            sample, target = self.get_item(index)
-            self.loaded_images[index] = (sample, target)
+        self.classes = ["class_{:d}".format(i) for i in range(51)]
+        self.temporal_jitter_range = temporal_jitter_range
+
+        if self.preload:
+            self.loaded_images = {}
+            print("LOADING DATASET")
+            for index in trange(len(self.samples)):
+                sample, target = self.get_item(index)
+                self.loaded_images[index] = (sample, target)
 
 
     def __getitem__(self, index):
-        return self.loaded_images[index]
+        if self.preload:
+            original_img, label = self.loaded_images[index]
+        else:
+            original_img, label = self.get_item(index)
+
+        if self.transform is not None:
+            original_img = self.transform(original_img)
+        if self.target_transform is not None:
+            label = self.target_transform(label)
+
+        if self.temporal_jitter_range == 0 and self.train:
+            return original_img, original_img, label
+        elif self.train:
+            new_label = None
+            while new_label != label:
+                new_index = np.minimum(np.maximum(index + np.random.randint(-self.temporal_jitter_range, self.temporal_jitter_range), 0), len(self)-1)
+                if self.preload:
+                    new_img, new_label = self.loaded_images[new_index]
+                else:
+                    new_img, new_label = self.get_item(new_index)
+
+            if self.transform is not None:
+                new_img = self.transform(new_img)
+
+            return original_img, new_img, label
+        else:
+            return original_img, label
 
     def get_item(self, index):
         """
@@ -168,11 +200,9 @@ class StreamDataset(data.Dataset):
                                   bbox[0],
                                   bbox[2]))
 
-        if self.transform is not None:
-            sample = self.transform(sample)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
-
+        resize_num = 128
+        new_size = (resize_num, int(float(resize_num)/sample.size[0] * sample.size[1]))
+        sample = sample.resize(new_size)
         return sample, target
 
     def __len__(self):

@@ -80,7 +80,7 @@ def main(args, train_loader=None, test_loader=None, model=None):
         classifier.train()
         local_progress = tqdm(train_loader, desc=f'Epoch {epoch}/{args.eval.num_epochs}', disable=True)
         
-        for idx, (images, labels) in enumerate(local_progress):
+        for idx, (images, _, labels) in enumerate(local_progress):
 
             classifier.zero_grad()
             with torch.no_grad():
@@ -100,7 +100,7 @@ def main(args, train_loader=None, test_loader=None, model=None):
     correct, total = 0, 0
     acc_meter.reset()
     train_features = []
-    for idx, (images, labels) in enumerate(train_loader):
+    for idx, (images, _, labels) in enumerate(train_loader):
         with torch.no_grad():
             feature = model(images.to(args.device))
             train_features.append(feature)
