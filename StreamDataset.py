@@ -154,12 +154,13 @@ class StreamDataset(data.Dataset):
             original_img, label = self.get_item(index)
 
         if self.transform is not None:
-            original_img = self.transform(original_img)
+            img1 = self.transform(original_img)
+            img2 = self.transform(original_img)
         if self.target_transform is not None:
             label = self.target_transform(label)
 
         if self.temporal_jitter_range == 0 and self.train:
-            return original_img, deepcopy(original_img), label
+            return img1, img2, label
         elif self.train:
             new_label = None
             new_index = np.minimum(index + self.temporal_jitter_range, len(self)-1) + 1

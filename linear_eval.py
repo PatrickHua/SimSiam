@@ -102,6 +102,7 @@ def main(args, train_loader=None, test_loader=None, model=None):
     train_features = []
     for idx, (images, _, labels) in enumerate(train_loader):
         with torch.no_grad():
+            assert (labels == 51).sum().item() == 0
             feature = model(images.to(args.device))
             train_features.append(feature)
             preds = classifier(feature).argmax(dim=1)
@@ -115,6 +116,7 @@ def main(args, train_loader=None, test_loader=None, model=None):
     test_features = []
     for idx, (images, labels) in enumerate(test_loader):
         with torch.no_grad():
+            assert (labels == 51).sum().item() == 0
             feature = model(images.to(args.device))
             test_features.append(feature)
             preds = classifier(feature).argmax(dim=1)
