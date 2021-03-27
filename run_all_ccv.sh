@@ -18,4 +18,4 @@
 ID=$(($SLURM_ARRAY_TASK_ID - 1))
 exp_type='iid_linearmonitor'
 
-source ~/miniconda3/bin/activate && conda activate simsiam && WANDB_RUN_GROUP=${exp_type} python3 main.py --config_file="configs/simsiam_stream51.yaml" --data_dir="../stream_data/" --log_dir="../logs/contrastive-logs-${exp_type}-${ID}/" --ckpt_dir=".cache/" --wandb --dataset_ordering='iid' --class_awareness --linear_monitor
+source ~/miniconda3/bin/activate && conda activate simsiam && WANDB_RUN_GROUP=${exp_type} python3 main.py --config_file="configs/simsiam_stream51.yaml" --data_dir="../stream_data/" --log_dir="../logs/contrastive-logs-${exp_type}-${ID}/" --ckpt_dir=".cache/${exp_type}/" --wandb --dataset_ordering='iid' --class_awareness --linear_monitor
