@@ -3,6 +3,7 @@ import os.path
 import random
 import sys
 from tqdm import trange
+from copy import deepcopy
 
 import json
 from PIL import Image
@@ -153,16 +154,23 @@ class StreamDataset(data.Dataset):
             original_img, label = self.get_item(index)
 
         if self.transform is not None:
+            new_img = self.transform(original_img)
             original_img = self.transform(original_img)
+        else:
+            new_img = original_img
         if self.target_transform is not None:
             label = self.target_transform(label)
 
         if self.temporal_jitter_range == 0 and self.train:
-            return original_img, original_img, label
+            return original_img, new_img, label
         elif self.train:
             new_label = None
+            new_index = np.minimum(index + self.temporal_jitter_range, len(self)-1) + 1
             while new_label != label:
-                new_index = np.minimum(np.maximum(index + np.random.randint(-self.temporal_jitter_range, self.temporal_jitter_range), 0), len(self)-1)
+                if False: # Use stochastic time jittering
+                    new_index = np.minimum(np.maximum(index + np.random.randint(-self.temporal_jitter_range, self.temporal_jitter_range), 0), len(self)-1)
+                else:
+                    new_index -= 1
                 if self.preload:
                     new_img, new_label = self.loaded_images[new_index]
                 else:
