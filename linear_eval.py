@@ -4,25 +4,45 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F 
 import torchvision
-from tqdm import tqdm
+from tqdm import tqdm, trange
 from arguments import get_args
 from augmentations import get_aug
 from models import get_model, get_backbone
 from tools import AverageMeter
 from datasets import get_dataset
 from optimizers import get_optimizer, LR_Scheduler
+from sklearn.manifold import TSNE
+import plotly.express as px
+import io
+from PIL import Image
+import imageio
+import numpy as np
+import cv2
+import random
 
-def main(args, train_loader=None, test_loader=None, model=None):
+def plotly_fig2array(fig):
+    fig_bytes = fig.to_image(format='png', engine='kaleido')
+    buf = io.BytesIO(fig_bytes)
+    img = Image.open(buf).convert("RGB")
+    return np.asarray(img)
+
+def main(args, train_loader=None, test_loader=None, model=None, tsne_visualization=False):
 
     if train_loader is None:
+        torch.manual_seed(0)
+        random.seed(0)
+        np.random.seed(0)
+        args.eval.num_epochs = 10
+
+        args.dataset_kwargs['ordering'] = 'instance'
         train_loader = torch.utils.data.DataLoader(
             dataset=get_dataset( 
-                transform=get_aug(train=False, train_classifier=True, **args.aug_kwargs), 
+                transform=get_aug(train=False, train_classifier=False, **args.aug_kwargs), 
                 train=True, 
                 **args.dataset_kwargs
             ),
-            batch_size=args.eval.batch_size,
-            shuffle=True,
+            batch_size=1,
+            shuffle=False,
             **args.dataloader_kwargs
         )
     if test_loader is None:
@@ -100,15 +120,40 @@ def main(args, train_loader=None, test_loader=None, model=None):
     correct, total = 0, 0
     acc_meter.reset()
     train_features = []
+    train_labels = []
+    train_images = []
     for idx, (images, _, labels) in enumerate(train_loader):
         with torch.no_grad():
             feature = model(images.to(args.device))
+            train_images.append(images)
             train_features.append(feature)
+            train_labels.append(labels)
             preds = classifier(feature).argmax(dim=1)
             correct = (preds == labels.to(args.device)).sum().item()
             acc_meter.update(correct/preds.shape[0])
     train_accuracy = acc_meter.avg * 100.
+    train_images = torch.cat(train_images, dim=0)
     train_features = torch.cat(train_features, dim=0)
+    train_labels = torch.cat(train_labels, dim=0)
+    if tsne_visualization:
+        train_images = train_images.cpu().numpy()
+        train_features = train_features.cpu().numpy()
+        train_labels = train_labels.cpu().numpy()
+        train_features_embedded = TSNE(n_components=2).fit_transform(train_features)
+        with imageio.get_writer('train.mp4', mode="I", fps=5) as writer:
+            for idx in trange(1, len(train_images)+1):
+                fig = px.scatter(x=train_features_embedded[:idx, 0], y=train_features_embedded[:idx, 1], color=[str(x) for x in train_labels[:idx]], size=[1 for _ in range(idx-1)] + [5], opacity=[(0.5 * i / float(len(train_images)+1)) + 0.5 for i in range(idx-1)], range_x=[-60, 60], range_y=[-70, 70])
+                fig_np = plotly_fig2array(fig)
+
+                attach_img = cv2.resize(train_images[idx-1].transpose((1, 2, 0)), (500, 500))
+                attach_img -= attach_img.min()
+                attach_img = attach_img / attach_img.max() * 255.
+
+                out = np.concatenate((fig_np, attach_img), axis=1).astype(np.uint8)
+
+                writer.append_data(out)
+        writer.close()
+
 
     correct, total = 0, 0
     acc_meter.reset()
@@ -130,5 +175,5 @@ def main(args, train_loader=None, test_loader=None, model=None):
 
 
 if __name__ == "__main__":
-    main(args=get_args())
+    main(args=get_args(), tsne_visualization=True)
 
