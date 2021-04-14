@@ -99,12 +99,15 @@ class SimSiam(nn.Module):
         )
         self.predictor = prediction_MLP()
     
-    def forward(self, x1, x2):
+    def forward(self, x1, x2, temporal_difference=None):
 
         f, h = self.encoder, self.predictor
         z1, z2 = f(x1), f(x2)
         p1, p2 = h(z1), h(z2)
-        L = D(p1, z2) / 2 + D(p2, z1) / 2
+        if temporal_difference is None:
+            L = D(p1, z2) / 2 + D(p2, z1) / 2
+        else:
+            L = (D(p1, z2) - temporal_difference)**2. / 2 + (D(p2, z1) - temporal_difference)**2. / 2
         return {'loss': L}
 
 
