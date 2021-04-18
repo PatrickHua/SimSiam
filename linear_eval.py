@@ -37,12 +37,12 @@ def main(args, train_loader=None, test_loader=None, model=None, tsne_visualizati
         args.dataset_kwargs['ordering'] = 'instance'
         train_loader = torch.utils.data.DataLoader(
             dataset=get_dataset( 
-                transform=get_aug(train=False, train_classifier=False, **args.aug_kwargs), 
+                transform=get_aug(train=True, train_classifier=False, **args.aug_kwargs), 
                 train=True, 
                 **args.dataset_kwargs
             ),
-            batch_size=1,
-            shuffle=False,
+            batch_size=args.eval.batch_size,
+            shuffle=True,
             **args.dataloader_kwargs
         )
     if test_loader is None:
@@ -64,7 +64,7 @@ def main(args, train_loader=None, test_loader=None, model=None, tsne_visualizati
         save_dict = torch.load(args.eval_from, map_location='cpu')
         msg = model.load_state_dict({k[9:]:v for k, v in save_dict['state_dict'].items() if k.startswith('backbone.')}, strict=True)
         
-        # print(msg)
+        print(msg)
     else:
         model = deepcopy(model)
     classifier = nn.Linear(in_features=model.output_dim, out_features=args.eval.num_classes, bias=True).to(args.device)
@@ -100,7 +100,9 @@ def main(args, train_loader=None, test_loader=None, model=None, tsne_visualizati
         classifier.train()
         local_progress = tqdm(train_loader, desc=f'Epoch {epoch}/{args.eval.num_epochs}', disable=True)
         
-        for idx, (images, _, labels) in enumerate(local_progress):
+        for idx, x in enumerate(local_progress):
+            images = x[0]
+            labels = x[-1]
 
             classifier.zero_grad()
             with torch.no_grad():
@@ -122,7 +124,9 @@ def main(args, train_loader=None, test_loader=None, model=None, tsne_visualizati
     train_features = []
     train_labels = []
     train_images = []
-    for idx, (images, _, labels) in enumerate(train_loader):
+    for idx, x in enumerate(train_loader):
+        images = x[0]
+        labels = x[-1]
         with torch.no_grad():
             assert (labels == 51).sum().item() == 0
             feature = model(images.to(args.device))
@@ -136,6 +140,7 @@ def main(args, train_loader=None, test_loader=None, model=None, tsne_visualizati
     train_images = torch.cat(train_images, dim=0)
     train_features = torch.cat(train_features, dim=0)
     train_labels = torch.cat(train_labels, dim=0)
+    print(f'Train Accuracy = {acc_meter.avg*100:.2f}')
     if tsne_visualization:
         train_images = train_images.cpu().numpy()
         train_features = train_features.cpu().numpy()
@@ -159,7 +164,9 @@ def main(args, train_loader=None, test_loader=None, model=None, tsne_visualizati
     correct, total = 0, 0
     acc_meter.reset()
     test_features = []
-    for idx, (images, labels) in enumerate(test_loader):
+    for idx, x in enumerate(test_loader):
+        images = x[0]
+        labels = x[-1]
         with torch.no_grad():
             assert (labels == 51).sum().item() == 0
             feature = model(images.to(args.device))
@@ -177,5 +184,5 @@ def main(args, train_loader=None, test_loader=None, model=None, tsne_visualizati
 
 
 if __name__ == "__main__":
-    main(args=get_args(), tsne_visualization=True)
+    main(args=get_args(), tsne_visualization=False)
 
