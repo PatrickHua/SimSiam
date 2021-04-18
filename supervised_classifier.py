@@ -20,6 +20,7 @@ import numpy as np
 import cv2
 import random
 from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 import sys
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -81,7 +82,9 @@ def main(args):
         local_progress = tqdm(train_loader, desc=f'Epoch {epoch}/{args.eval.num_epochs}', disable=True)
         
         total_losses = 0.
-        for idx, (images, _, labels) in enumerate(local_progress):
+        for idx, tup in enumerate(local_progress):
+            images = tup[0]
+            labels = tup[-1]
 
             classifier.zero_grad()
 
@@ -104,7 +107,9 @@ def main(args):
     train_features = []
     train_labels = []
     train_images = []
-    for idx, (images, _, labels) in enumerate(train_loader):
+    for idx, tup in enumerate(train_loader):
+        images = tup[0]
+        labels = tup[-1]
         with torch.no_grad():
             assert (labels == 51).sum().item() == 0
             feature = model(images.to(args.device))
@@ -140,8 +145,10 @@ def main(args):
     test_predictions = torch.cat(test_predictions, dim=0).cpu().numpy()
     test_labels = torch.cat(test_labels, dim=0).cpu().numpy()
     print(f'Test Accuracy = {acc_meter.avg*100:.2f}')
-    conf_mat = confusion_matrix(test_labels, test_predictions)
-    print(conf_mat)
+    conf_mat = confusion_matrix(test_labels, test_predictions, normalize='true')
+    fig = px.imshow(conf_mat)
+    fig.write_image("test_confusion.png")
+
 
     return train_accuracy, test_accuracy, train_features, test_features
 
