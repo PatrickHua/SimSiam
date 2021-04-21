@@ -68,7 +68,7 @@ def main(device, args):
 
     memory_loader = torch.utils.data.DataLoader(
         dataset=get_dataset(
-            transform=get_aug(train=False, train_classifier=False, **args.aug_kwargs), 
+            transform=get_aug(train=False, train_classifier=True, **args.aug_kwargs), 
             train=True,
             **args.dataset_kwargs),
         shuffle=True,
