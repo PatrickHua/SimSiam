@@ -1,6 +1,6 @@
-name: simsiam-stream51-experiment-resnet18_cifar_variant1
+name: simsiam-ucf101-experiment-resnet18_cifar_variant1
 dataset: 
-  name: stream51
+  name: ucf101
   image_size: 32
   num_workers: 9
   ordering: 'iid'
@@ -19,8 +19,8 @@ train:
   warmup_lr: 0
   base_lr: 0.03
   final_lr: 0
-  num_epochs: 400 # this parameter influence the lr decay
-  stop_at_epoch: 400 # has to be smaller than num_epochs
+  num_epochs: 3 # this parameter influence the lr decay
+  stop_at_epoch: 3 # has to be smaller than num_epochs
   batch_size: 512
   knn_monitor: False # knn monitor will take more time
   knn_interval: 10
@@ -35,8 +35,8 @@ eval: # linear evaluation, False will turn off automatic evaluation after traini
   base_lr: 30
   final_lr: 0
   batch_size: 256
-  num_epochs: 100
-  num_classes: 51
+  num_epochs: 3
+  num_classes: 101
 
 logger:
   tensorboard: True

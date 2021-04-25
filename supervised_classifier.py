@@ -76,13 +76,17 @@ def main(args):
 
     # Start training
     global_progress = tqdm(range(0, args.eval.num_epochs), desc=f'Evaluating')
+    print("STARTING GLOBAL", flush=True)
     for epoch in global_progress:
         loss_meter.reset()
         classifier.train()
-        local_progress = tqdm(train_loader, desc=f'Epoch {epoch}/{args.eval.num_epochs}', disable=True)
+        local_progress = tqdm(train_loader, desc=f'Epoch {epoch}/{args.eval.num_epochs}', disable=False)
         
         total_losses = 0.
+        print("STARTING LOCAL", flush=True)
         for idx, tup in enumerate(local_progress):
+            if idx > 100:
+                break
             images = tup[0]
             labels = tup[-1]
 
@@ -111,7 +115,6 @@ def main(args):
         images = tup[0]
         labels = tup[-1]
         with torch.no_grad():
-            assert (labels == 51).sum().item() == 0
             feature = model(images.to(args.device))
             train_images.append(images)
             train_features.append(feature)

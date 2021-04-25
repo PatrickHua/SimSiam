@@ -15,15 +15,26 @@ class SimSiamTransform():
         # the paper didn't specify this, feel free to change this value
         # I use the setting from simclr which is 50% chance applying the gaussian blur
         # the 32 is prepared for cifar training where they disabled gaussian blur
-        self.transform = T.Compose([
-            T.RandomResizedCrop(image_size, scale=(0.2, 1.0)),
-            T.RandomHorizontalFlip(),
-            T.RandomApply([T.ColorJitter(0.4,0.4,0.4,0.1)], p=0.8),
-            T.RandomGrayscale(p=0.2),
-            T.RandomApply([T.GaussianBlur(kernel_size=image_size//20*2+1, sigma=(0.1, 2.0))], p=p_blur),
-            T.ToTensor(),
-            T.Normalize(*mean_std)
-        ])
+        if False:
+            self.transform = T.Compose([
+                T.RandomResizedCrop(image_size, scale=(0.2, 1.0)),
+                T.RandomHorizontalFlip(),
+                T.RandomApply([T.ColorJitter(0.4,0.4,0.4,0.1)], p=0.8),
+                T.RandomGrayscale(p=0.2),
+                T.RandomApply([T.GaussianBlur(kernel_size=image_size//20*2+1, sigma=(0.1, 2.0))], p=p_blur),
+                T.ToTensor(),
+                T.Normalize(*mean_std)
+            ])
+        else:
+            self.transform = T.Compose([
+                T.RandomResizedCrop(image_size, scale=(0.2, 1.0)),
+                T.RandomHorizontalFlip(),
+                T.RandomApply([T.ColorJitter(0.4,0.4,0.4,0.1)], p=0.8),
+                T.RandomGrayscale(p=0.2),
+                T.RandomApply([T.GaussianBlur(kernel_size=image_size//20*2+1, sigma=(0.1, 2.0))], p=p_blur),
+                # T.ToTensor(),
+                T.Normalize(*mean_std)
+            ])
     def __call__(self, x):
         x = self.transform(x)
         return x
