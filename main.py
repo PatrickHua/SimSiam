@@ -173,10 +173,6 @@ def main(device, args):
     with open(os.path.join(args.log_dir, f"checkpoint_path.txt"), 'w+') as f:
         f.write(f'{model_path}')
 
-    # if args.eval is not False:
-    #     args.eval_from = model_path
-    #     final_test_accuracy = linear_eval(args)
-
 
 if __name__ == "__main__":
     args = get_args()
@@ -187,7 +183,6 @@ if __name__ == "__main__":
         wandb.init(project='simsiam', config=wandb_config)
 
     print("Using device", args.device)
-    assert(args.device == 'cuda')
 
     main(device=args.device, args=args)
 
