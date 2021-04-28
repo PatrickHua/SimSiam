@@ -2,7 +2,7 @@ name: simsiam-ucf101-experiment-resnet18_cifar_variant1
 dataset: 
   name: ucf101
   image_size: 32
-  num_workers: 8
+  num_workers: 12
   ordering: 'iid'
 
 model: 

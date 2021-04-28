@@ -39,36 +39,36 @@ class UCFDataset(torchvision.datasets.UCF101):
             return img, label
 
 class UCFImageDataset(torchvision.datasets.ImageFolder):
-    def __init__(self, root, train, transform, temporal_jitter_range=0):
+    def __init__(self, root, train, transform, temporal_jitter_range=0, small_dataset=False, preload_dataset=True):
         if train:
-            root += '-test'
-        else:
             root += '-train'
-        # super(UCFImageDataset, self).__init__(root, transform=torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Resize(64)]))
-        # super(UCFImageDataset, self).__init__(root, transform=None)
+        else:
+            root += '-test'
+
         super(UCFImageDataset, self).__init__(root, transform=None)
         self.img_transform = transform
         self.train = train
         self.temporal_jitter_range = temporal_jitter_range
+        self.small_dataset = small_dataset
 
-        # self.cache = {}
-        # print("starting loadign", flush=True)
-        # if True:
-        #     for i in trange(len(self)):
-        #         self.cache[i] = self.get_item_helper(i)
-        # else:
-        #     with Pool(8) as p:
-        #         self.cache = p.map(self.get_item_helper, [i for i in range(len(self))])
+        self.cache = {}
+        if preload_dataset:
+            for i in trange(len(self)):
+                self.cache[i] = self.get_item_helper(i)
 
     def get_item_helper(self, index):
-        # if index not in self.cache:
-        img, label = super(UCFImageDataset, self).__getitem__(index)
-
-        # img = (img.numpy() * 255.).astype(np.uint8)
+        if index in self.cache:
+            img, label = self.cache[index]
+        else:
+            img, label = super(UCFImageDataset, self).__getitem__(index)
 
         return img, label
 
-        # return self.cache[index]
+    def __len__(self) -> int:
+        if self.small_dataset:
+            return 10000
+        else:
+            return super(UCFImageDataset, self).__len__()
     
     def __getitem__(self, index):
         img, label = self.get_item_helper(index)
@@ -83,7 +83,7 @@ class UCFImageDataset(torchvision.datasets.ImageFolder):
                 assert new_idx >= index
                 new_idx -= 1
                 if new_idx == index:
-                    new_img = img
+                    new_img, new_label = self.get_item_helper(index)
                     break
                 new_img, new_label = self.get_item_helper(new_idx)
             if self.img_transform is not None:

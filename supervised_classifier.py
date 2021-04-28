@@ -22,12 +22,28 @@ import random
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import sys
+import wandb
+import pandas as pd
 np.set_printoptions(threshold=sys.maxsize)
+
+def iterate_and_write(dataloader, path):
+    img_idx = 0
+    for x, _, y in tqdm(dataloader):
+        label_idx = y.item()
+        img = (x[0, :, :, :].numpy().transpose((1, 2, 0)) * 255).astype(np.uint8)
+        img = Image.fromarray(img)
+
+        imgpath = os.path.join(path, "label" + str(label_idx))
+        os.makedirs(imgpath, exist_ok=True)
+        img.save(os.path.join(imgpath, "img" + str(img_idx) + ".bmp"))
+
+        img_idx += 1
 
 def write_images(args):
     args.dataset_kwargs['ordering'] = 'instance'
-    if True:
-        train_loader = torch.utils.data.DataLoader(
+    convert_train = True
+    if convert_train:
+        dataloader = torch.utils.data.DataLoader(
             dataset=get_dataset( 
                 transform=torchvision.transforms.Resize(64),
                 train=True, 
@@ -38,21 +54,12 @@ def write_images(args):
             **args.dataloader_kwargs
         )
 
-        img_idx = 0
-        for x, _, y in tqdm(train_loader):
-            label_idx = y.item()
-            img = (x[0, :, :, :].numpy().transpose((1, 2, 0)) * 255).astype(np.uint8)
-            img = Image.fromarray(img)
+        path = os.path.join("..", "ucfimages64x64-train")
 
-            imgpath = os.path.join("..", "ucfimages64x64-train", "label" + str(label_idx))
-            os.makedirs(imgpath, exist_ok=True)
-            img.save(os.path.join(imgpath, "img" + str(img_idx) + ".bmp"))
-
-            img_idx += 1
     else:
-        test_loader = torch.utils.data.DataLoader(
+        datalaoder = torch.utils.data.DataLoader(
             dataset=get_dataset(
-                transform=None,
+                transform=torchvision.transforms.Resize(64),
                 train=False,
                 **args.dataset_kwargs
             ),
@@ -61,17 +68,8 @@ def write_images(args):
             **args.dataloader_kwargs
         )
 
-        img_idx = 0
-        for x, y in tqdm(test_loader):
-            label_idx = y.item()
-            img = (x[0, :, :, :].numpy().transpose((1, 2, 0)) * 255).astype(np.uint8)
-            img = Image.fromarray(img)
-
-            imgpath = os.path.join("..", "ucfimages-test", "label" + str(label_idx))
-            os.makedirs(imgpath, exist_ok=True)
-            img.save(os.path.join(imgpath, "img" + str(img_idx) + ".bmp"))
-
-            img_idx += 1
+        path = os.path.join("..", "ucfimages64x64-test")
+    iterate_and_write(dataloader, path)
 
 def calc_accuracy(classifier, dataloader, device):
     with torch.no_grad():
@@ -81,9 +79,10 @@ def calc_accuracy(classifier, dataloader, device):
         acc_meter.reset()
         all_predictions = []
         all_labels = []
-        for idx, (images, labels) in enumerate(dataloader):
+        for idx, data in tqdm(enumerate(dataloader), total=len(dataloader)):
+            images = data[0]
+            labels = data[-1]
             with torch.no_grad():
-                # assert (labels == 51).sum().item() == 0
                 preds = classifier(images.to(device, non_blocking=True)).argmax(dim=1)
                 correct = (preds == labels.to(device, non_blocking=True)).sum().item()
                 all_predictions.append(preds)
@@ -93,11 +92,13 @@ def calc_accuracy(classifier, dataloader, device):
         all_predictions = torch.cat(all_predictions, dim=0).cpu().numpy()
         all_labels = torch.cat(all_labels, dim=0).cpu().numpy()
 
-        classifier.train()
-
     return accuracy, all_labels, all_predictions
 
 def main(args):
+    if args.wandb:
+        wandb_config = pd.json_normalize(vars(args), sep='_')
+        wandb_config = wandb_config.to_dict(orient='records')[0]
+        wandb.init(project='simsiam', config=wandb_config)
 
     args.dataset_kwargs['ordering'] = 'instance'
     train_aug = get_aug(train=True, train_classifier=False, **args.aug_kwargs)
@@ -119,18 +120,9 @@ def main(args):
             **args.dataset_kwargs
         ),
         batch_size=args.eval.batch_size,
-        shuffle=False,
+        shuffle=True,
         **args.dataloader_kwargs
     )
-
-    for _ in tqdm(test_loader):
-        pass
-    for _ in tqdm(train_loader):
-        pass
-    assert False
-
-    # train_loader = test_loader
-
 
     model = get_backbone(args.model.backbone)
 
@@ -156,14 +148,17 @@ def main(args):
     loss_meter = AverageMeter(name='Loss')
     acc_meter = AverageMeter(name='Accuracy')
 
+    if args.wandb:
+        wandb.watch(classifier)
+
     # Start training
     global_progress = tqdm(range(0, args.eval.num_epochs), desc=f'Evaluating')
     for epoch in global_progress:
+        classifier.train()
         loss_meter.reset()
         classifier.train()
-        local_progress = tqdm(train_loader, desc=f'Epoch {epoch}/{args.eval.num_epochs}', disable=False)
+        local_progress = tqdm(train_loader, desc=f'Epoch {epoch}/{args.eval.num_epochs}', disable=True)
         
-        total_losses = 0.
         for idx, tup in enumerate(local_progress):
             images = tup[0]
             labels = tup[-1]
@@ -177,13 +172,16 @@ def main(args):
             loss.backward()
             optimizer.step()
             loss_meter.update(loss.item())
-            total_losses += loss.item()
             lr = lr_scheduler.step()
             local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
-        if (epoch+1) % 1 == 0:
+        if (epoch+1) % 5 == 0:
             train_accuracy, _, _ = calc_accuracy(classifier, train_loader, args.device)
             test_accuracy, _, _ = calc_accuracy(classifier, test_loader, args.device)
-            print("Epoch Loss:", total_losses / len(local_progress), "train acc:", train_accuracy * 100, "test acc:", test_accuracy * 100)
+            print("Epoch Loss:", loss_meter.avg, "train acc:", train_accuracy * 100, "test acc:", test_accuracy * 100)
+
+        if args.wandb:
+            epoch_dict = {"Epoch": epoch, "Train Accuracy": train_accuracy, "Test Accuracy": test_accuracy, "Loss": loss_meter.avg}
+            wandb.log(epoch_dict)
 
     train_accuracy, train_labels, train_predictions = calc_accuracy(classifier, train_loader, args.device)
     print(f'Train Accuracy = {acc_meter.avg*100:.2f}')

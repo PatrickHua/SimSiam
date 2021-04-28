@@ -21,7 +21,7 @@ def get_dataset(dataset, data_dir, transform, train=True, download=False, debug_
     elif dataset == 'stream51':
         dataset = StreamDataset(data_dir, train=train, ordering=ordering, transform=transform, small_dataset=small_dataset, temporal_jitter_range=temporal_jitter_range, preload=preload)
     elif dataset == 'ucf101':
-        dataset = UCFImageDataset(data_dir, train, transform)
+        dataset = UCFImageDataset(data_dir, train, transform, small_dataset=small_dataset, preload_dataset=preload)
     elif dataset == 'ucf101_vid':
         dataset = UCFDataset(data_dir, train, transform)
     else:
