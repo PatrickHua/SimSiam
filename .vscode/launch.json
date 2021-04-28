@@ -1,0 +1,16 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Supervised UCF101",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/supervised_classifier.py",
+            "args": ["--config_file=${workspaceFolder}/configs/simsiam_ucf101.yaml", "--data_dir=${workspaceFolder}/../ucfimages64x64", "--log_dir=${workspaceFolder}/../logs/ucf101-supervised-logs-${WANDB_RUN_GROUP}-${ID}/", "--ckpt_dir=${workspaceFolder}/.cache/debug", "--preload_dataset", "--small_dataset"],
+            "console": "integratedTerminal"
+        }
+    ]
+}

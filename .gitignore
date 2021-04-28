@@ -3,7 +3,6 @@ __pycache__/
 outputs/
 output/
 tmp/
-.vscode/
 data/
 Data/
 tags
