@@ -153,6 +153,8 @@ def main(args):
 
     # Start training
     global_progress = tqdm(range(0, args.eval.num_epochs), desc=f'Evaluating')
+    train_accuracy = 0.
+    test_accuracy = 0.
     for epoch in global_progress:
         classifier.train()
         loss_meter.reset()
