@@ -13,12 +13,20 @@ class Transform_single():
                 transforms.Normalize(*normalize)
             ])
         else:
-            self.transform = transforms.Compose([
-                transforms.Resize(int(image_size*(8/7)), interpolation=Image.BICUBIC), # 224 -> 256 
-                transforms.CenterCrop(image_size),
-                transforms.ToTensor(),
-                transforms.Normalize(*normalize)
-            ])
+            if True:
+                self.transform = transforms.Compose([
+                    transforms.Resize(int(image_size*(8/7)), interpolation=Image.BICUBIC), # 224 -> 256 
+                    transforms.CenterCrop(image_size),
+                    transforms.ToTensor(),
+                    transforms.Normalize(*normalize)
+                ])
+            else:
+                self.transform = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Resize(int(image_size*(8/7)), interpolation=Image.BICUBIC), # 224 -> 256 
+                    transforms.CenterCrop(image_size),
+                    transforms.Normalize(*normalize)
+                ])
 
     def __call__(self, x):
         return self.transform(x)

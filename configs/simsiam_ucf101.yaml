@@ -2,7 +2,7 @@ name: simsiam-ucf101-experiment-resnet18_cifar_variant1
 dataset: 
   name: ucf101
   image_size: 32
-  num_workers: 9
+  num_workers: 8
   ordering: 'iid'
 
 model: 
@@ -35,7 +35,7 @@ eval: # linear evaluation, False will turn off automatic evaluation after traini
   base_lr: 30
   final_lr: 0
   batch_size: 256
-  num_epochs: 3
+  num_epochs: 100
   num_classes: 101
 
 logger:
