@@ -66,7 +66,7 @@ class UCFImageDataset(torchvision.datasets.ImageFolder):
 
     def __len__(self) -> int:
         if self.small_dataset:
-            return 10000
+            return 100000
         else:
             return super(UCFImageDataset, self).__len__()
     

@@ -94,14 +94,12 @@ def main(args, train_loader=None, test_loader=None, model=None, tsne_visualizati
 
     # Start training
     global_progress = tqdm(range(0, args.eval.num_epochs), desc=f'Evaluating')
-    print("STARTING GLOBAL", flush=True)
     for epoch in global_progress:
         loss_meter.reset()
         model.eval()
         classifier.train()
-        local_progress = tqdm(train_loader, desc=f'Epoch {epoch}/{args.eval.num_epochs}')
+        local_progress = tqdm(train_loader, desc=f'Epoch {epoch}/{args.eval.num_epochs}', disable=True)
         
-        print("STARTING LOCAL", flush=True)
         for idx, x in enumerate(local_progress):
             images = x[0]
             labels = x[-1]
