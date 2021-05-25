@@ -9,7 +9,7 @@ from PIL import ImageFilter
 import numpy as np
 import torchvision.transforms as transforms
 
-class SvAVTransform():
+class SwAVTransform():
     def __init__(self, size_crops, nmb_crops, min_scale_crops, max_scale_crops):
         assert len(size_crops) == len(nmb_crops)
         assert len(min_scale_crops) == len(nmb_crops)
