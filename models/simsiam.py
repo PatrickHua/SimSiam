@@ -39,7 +39,7 @@ class projection_MLP(nn.Module):
         )
         self.layer3 = nn.Sequential(
             nn.Linear(hidden_dim, out_dim),
-            nn.BatchNorm1d(hidden_dim)
+            nn.BatchNorm1d(out_dim)
         )
         self.num_layers = 3
     def set_layers(self, num_layers):
